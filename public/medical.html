@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Medical Help - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .alert-box {
+            background-color: #e74c3c;
+            color: white;
+            padding: 1rem;
+            border-radius: var(--radius);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-box i {
+            font-size: 1.5rem;
+        }
+
+        .contact-list {
+            margin-top: 2rem;
+        }
+
+        .contact-card {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .contact-card:last-child {
+            border-bottom: none;
+        }
+
+        .contact-info h4 {
+            margin-bottom: 0.2rem;
+        }
+
+        .contact-info p {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .call-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: #2ecc71;
+            color: white;
+            transition: var(--transition);
+        }
+
+        .call-btn:hover {
+            transform: scale(1.1);
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-paw"></i> StraySouls
+            </a>
+            <div class="nav-toggle"><i class="fas fa-bars"></i></div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="report.html">Report Stray</a></li>
+                <li><a href="adopt.html">Adopt</a></li>
+                <li><a href="medical.html" class="active">Medical Help</a></li>
+                <li><a href="donate.html">Donate</a></li>
+                <li><a href="heatmap.html">Heatmap</a></li>
+                <li id="auth-links"><!-- JS Populated --></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container mb-2 text-center" style="max-width: 800px; padding-top: 2rem;">
+        <h1>Medical Assistance</h1>
+        <p class="mb-2">Report injured animals or find nearby veterinary clinics.</p>
+
+        <div class="alert-box">
+            <i class="fas fa-exclamation-triangle"></i>
+            <div>
+                <strong>Emergency?</strong> If the animal is in critical condition, please call the emergency hotline
+                immediately.
+            </div>
+        </div>
+
+        <div class="card mb-2" style="text-align: left;">
+            <h3 class="mb-1">Request Medical Aid</h3>
+            <form id="medical-form" onsubmit="handleMedicalRequest(event)">
+                <div class="form-group">
+                    <label>Injury Photo (Required)</label>
+                    <div class="upload-preview" onclick="document.getElementById('medical-photo').click()">
+                        <div id="preview-text" class="text-center">
+                            <i class="fas fa-camera fa-2x mb-1"></i>
+                            <p>Click to upload photo</p>
+                        </div>
+                        <img id="image-preview" src="" style="display: none;">
+                    </div>
+                    <input type="file" id="medical-photo" class="form-control" accept="image/*" style="display: none;"
+                        onchange="previewImage(this)">
+                </div>
+
+                <div class="form-group">
+                    <label>Type of Injury / Condition</label>
+                    <select id="injury-type" class="form-control" required>
+                        <option value="Visible Wounds">Visible Wounds</option>
+                        <option value="Limping / Broken Limb">Limping / Broken Limb</option>
+                        <option value="Skin Infection / Mange">Skin Infection / Mange</option>
+                        <option value="Unconscious / Heavy Breathing">Unconscious / Heavy Breathing</option>
+                        <option value="Other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Location</label>
+                    <button type="button" class="btn btn-outline btn-sm mb-1" onclick="getLocation()">
+                        <i class="fas fa-map-marker-alt"></i> Capture Current Location
+                    </button>
+                    <p id="location-status" style="font-size: 0.8rem; color: #666; margin-bottom: 10px;"></p>
+                    <input type="text" id="address" class="form-control" placeholder="Landmarks, Street Name..."
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea id="description" class="form-control" rows="3"></textarea>
+                </div>
+
+                <div class="form-group">
+                    <input type="checkbox" id="emergency-check">
+                    <label for="emergency-check" style="display:inline; color: #e74c3c; font-weight: bold;"> This is a
+                        life-threatening emergency</label>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Submit
+                    Request</button>
+            </form>
+        </div>
+
+        <div class="card" style="text-align: left;">
+            <h3 class="mb-1">Nearby Vets & Emergency Contacts</h3>
+            <div class="contact-list">
+                <div class="contact-card">
+                    <div class="contact-info">
+                        <h4>City Vet Clinic</h4>
+                        <p>Open 9 AM - 8 PM • 1.2 km away</p>
+                    </div>
+                    <a href="tel:1234567890" class="call-btn"><i class="fas fa-phone"></i></a>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-info">
+                        <h4>Animal Rescue Hotline (24/7)</h4>
+                        <p>Emergency Response Team</p>
+                    </div>
+                    <a href="tel:112" class="call-btn" style="background-color: #e74c3c;"><i
+                            class="fas fa-phone"></i></a>
+                </div>
+                <div class="contact-card">
+                    <div class="contact-info">
+                        <h4>Paws & Claws Hospital</h4>
+                        <p>Open 24 Hours • 3.5 km away</p>
+                    </div>
+                    <a href="tel:0987654321" class="call-btn"><i class="fas fa-phone"></i></a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script>
+        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                    document.getElementById('preview-text').style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function getLocation() {
+            const status = document.getElementById('location-status');
+            if (!navigator.geolocation) {
+                status.textContent = "Geolocation not supported";
+                return;
+            }
+            status.textContent = "Locating...";
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    window.currentLat = pos.coords.latitude;
+                    window.currentLng = pos.coords.longitude;
+                    status.innerHTML = `<i class="fas fa-check text-success"></i> Lat: ${window.currentLat.toFixed(4)}, Lng: ${window.currentLng.toFixed(4)}`;
+                },
+                () => { status.textContent = "Unable to retrieve location"; }
+            );
+        }
+
+        async function handleMedicalRequest(e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('medical-photo');
+            const injuryType = document.getElementById('injury-type').value;
+            const address = document.getElementById('address').value;
+            const description = document.getElementById('description').value;
+            const isEmergency = document.getElementById('emergency-check').checked;
+
+            if (!fileInput.files[0]) {
+                showToast("Please upload a photo of the injury.", "error");
+                return;
+            }
+
+            if (!window.currentLat || !window.currentLng) {
+                showToast("Please capture your location first.", "error");
+                return;
+            }
+
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = "Submitting...";
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('lat', window.currentLat);
+            formData.append('lng', window.currentLng);
+            formData.append('address', address);
+            formData.append('injuryType', injuryType);
+            formData.append('description', description);
+            formData.append('isEmergency', isEmergency);
+
+            try {
+                const token = localStorage.getItem('straySoulsToken');
+                const response = await fetch(`${API_BASE}/api/medical/request`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast("Medical request submitted! Help is on the way.", "success");
+                    setTimeout(() => window.location.href = 'dashboard.html', 2000);
+                } else {
+                    showToast(data.error || "Submission failed", "error");
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Server error. Please try again.", "error");
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        }
+    </script>
+</body>
+
+</html>

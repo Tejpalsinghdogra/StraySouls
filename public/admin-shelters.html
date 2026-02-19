@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Shelters - StraySouls Admin</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .admin-container {
+            display: flex;
+            min-height: 100vh;
+            background-color: var(--background-light);
+        }
+
+        .sidebar {
+            width: 250px;
+            background: #2c3e50;
+            color: white;
+            padding: 2rem 1rem;
+            position: fixed;
+            height: 100%;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar h2 {
+            font-size: 1.5rem;
+            margin-bottom: 2.5rem;
+            text-align: center;
+            color: var(--primary-color);
+            letter-spacing: 1px;
+        }
+
+        .sidebar ul li {
+            margin-bottom: 0.8rem;
+        }
+
+        .sidebar ul li a {
+            color: #bdc3c7;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            transition: var(--transition);
+            font-weight: 500;
+        }
+
+        .sidebar ul li a:hover,
+        .sidebar ul li a.active {
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--primary-color);
+        }
+
+        .main-content {
+            margin-left: 250px;
+            flex: 1;
+            padding: 2.5rem;
+        }
+
+        .header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .card-table {
+            background: white;
+            border-radius: 12px;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+        }
+
+        .status-dropdown {
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            background: #fdfdfd;
+            font-size: 0.9rem;
+            color: var(--text-dark);
+            cursor: pointer;
+            transition: var(--transition);
+        }
+
+        .status-dropdown:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(46, 204, 113, 0.1);
+        }
+
+        .badge-status {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-pending {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .badge-approved {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge-rejected {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: var(--transition);
+            border: 1.5px solid transparent;
+        }
+
+        .btn-view {
+            border-color: var(--secondary-color);
+            color: var(--secondary-color);
+            background: transparent;
+        }
+
+        .btn-view:hover {
+            background: var(--secondary-color);
+            color: white;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="admin-container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h2>StraySouls Admin</h2>
+            <ul>
+                <li><a href="admin.html"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="admin-reports.html"><i class="fas fa-exclamation-circle"></i> Reports</a></li>
+                <li><a href="admin-shelters.html" class="active"><i class="fas fa-home"></i> Shelters</a></li>
+                <li><a href="admin-volunteers.html"><i class="fas fa-users"></i> Volunteers</a></li>
+                <li><a href="index.html" onclick="logout()" style="margin-top: 3rem; color: #e74c3c;"><i
+                            class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="header-flex">
+                <div>
+                    <h1 style="margin-bottom: 0;">Shelter Management</h1>
+                    <div class="text-sm text-muted">Review applications and manage partner shelters</div>
+                </div>
+                <div class="filter-container" style="display: flex; gap: 15px; align-items: center;">
+                    <label style="font-weight: 600; color: var(--text-dark); font-size: 0.9rem;">Filter by
+                        Status:</label>
+                    <select id="status-filter" class="status-dropdown" onchange="filterShelters()"
+                        style="min-width: 150px;">
+                        <option value="all">All Shelters</option>
+                        <option value="pending">Pending</option>
+                        <option value="approved">Approved</option>
+                        <option value="rejected">Rejected</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="card-table">
+                <table class="table" style="width: 100%; border-collapse: collapse;">
+                    <thead>
+                        <tr style="text-align: left; border-bottom: 2px solid #f4f4f4;">
+                            <th style="padding: 12px;">Organization</th>
+                            <th style="padding: 12px;">Contact Person</th>
+                            <th style="padding: 12px;">Location</th>
+                            <th style="padding: 12px;">Capacity</th>
+                            <th style="padding: 12px;">Status</th>
+                            <th style="padding: 12px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="shelters-table-body">
+                        <tr>
+                            <td colspan="6" class="text-center" style="padding: 3rem;">
+                                <i class="fas fa-circle-notch fa-spin fa-2x text-primary mb-1"></i>
+                                <p>Fetching shelters...</p>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Shelter Details Modal -->
+    <div id="detailsModal" class="modal-overlay"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1001;">
+        <div class="modal-content"
+            style="background: white; padding: 2.5rem; border-radius: 12px; width: 95%; max-width: 700px; max-height: 90vh; overflow-y: auto;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+                <h2 id="detail-org-name" style="margin: 0; color: var(--primary-color);">Shelter Details</h2>
+                <button onclick="closeDetailsModal()"
+                    style="background: none; border: none; font-size: 1.5rem; cursor: pointer; color: #95a5a6;">&times;</button>
+            </div>
+
+            <div id="detail-content">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2rem;">
+                    <div>
+                        <div class="mb-1">
+                            <label
+                                style="font-weight: 700; display: block; font-size: 0.8rem; color: #95a5a6;">REGISTRATION
+                                NUMBER</label>
+                            <p id="detail-reg-num" style="font-weight: 500;"></p>
+                        </div>
+                        <div class="mb-1">
+                            <label style="font-weight: 700; display: block; font-size: 0.8rem; color: #95a5a6;">CONTACT
+                                PERSON</label>
+                            <p id="detail-contact-person" style="font-weight: 500;"></p>
+                        </div>
+                        <div class="mb-1">
+                            <label
+                                style="font-weight: 700; display: block; font-size: 0.8rem; color: #95a5a6;">EMAIL</label>
+                            <p id="detail-email" style="font-weight: 500;"></p>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="mb-1">
+                            <label
+                                style="font-weight: 700; display: block; font-size: 0.8rem; color: #95a5a6;">CAPACITY</label>
+                            <p id="detail-capacity" style="font-weight: 500;"></p>
+                        </div>
+                        <div class="mb-1">
+                            <label
+                                style="font-weight: 700; display: block; font-size: 0.8rem; color: #95a5a6;">ADDRESS</label>
+                            <p id="detail-address" style="font-weight: 500;"></p>
+                        </div>
+                        <div class="mb-1">
+                            <label
+                                style="font-weight: 700; display: block; font-size: 0.8rem; color: #95a5a6;">SERVICES</label>
+                            <p id="detail-services" style="font-weight: 500;"></p>
+                        </div>
+                    </div>
+                </div>
+                <div style="margin-top: 1rem;" id="certification-container">
+                    <label
+                        style="font-weight: 700; display: block; font-size: 0.8rem; color: #95a5a6;">CERTIFICATION</label>
+                    <a id="detail-cert-link" href="#" target="_blank" class="btn btn-sm btn-link"
+                        style="padding-left: 0; color: var(--secondary-color);">View Document</a>
+                </div>
+            </div>
+
+            <div style="margin-top: 2.5rem; display: flex; justify-content: flex-end; gap: 1rem;">
+                <button class="btn btn-outline" onclick="closeDetailsModal()">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script>
+        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+        let allShelters = [];
+
+        document.addEventListener('DOMContentLoaded', () => {
+            loadShelters();
+        });
+
+        async function loadShelters() {
+            const token = localStorage.getItem('straySoulsToken');
+            try {
+                const res = await fetch(`${API_BASE}/api/shelters`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'x-auth-token': token }
+                });
+                allShelters = await res.json();
+                renderShelters(allShelters);
+            } catch (err) { console.error(err); }
+        }
+
+        function filterShelters() {
+            const status = document.getElementById('status-filter').value;
+            if (status === 'all') {
+                renderShelters(allShelters);
+            } else {
+                const filtered = allShelters.filter(s => s.status === status);
+                renderShelters(filtered);
+            }
+        }
+
+        function renderShelters(shelters) {
+            const tbody = document.getElementById('shelters-table-body');
+            if (shelters.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="padding: 3rem;">No shelters found for the selected filter.</td></tr>';
+                return;
+            }
+
+            tbody.innerHTML = shelters.map(s => `
+                <tr style="border-bottom: 1px solid #f4f4f4;">
+                    <td style="padding: 15px; font-weight: 600;">${s.organizationName}</td>
+                    <td style="padding: 15px;">${s.contactPerson}</td>
+                    <td style="padding: 15px; max-width: 200px;">${s.address}</td>
+                    <td style="padding: 15px;">${s.capacity} pets</td>
+                    <td style="padding: 15px;">
+                        <select class="status-dropdown" onchange="updateShelterStatus('${s._id}', this.value)">
+                            <option value="pending" ${s.status === 'pending' ? 'selected' : ''}>Pending</option>
+                            <option value="approved" ${s.status === 'approved' ? 'selected' : ''}>Approved</option>
+                            <option value="rejected" ${s.status === 'rejected' ? 'selected' : ''}>Rejected</option>
+                        </select>
+                    </td>
+                    <td style="padding: 15px;">
+                        <button class="btn-action btn-view" onclick="viewDetails('${s._id}')">Details</button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        async function updateShelterStatus(id, status) {
+            const token = localStorage.getItem('straySoulsToken');
+            try {
+                const res = await fetch(`${API_BASE}/api/shelters/${id}/status`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`,
+                        'x-auth-token': token
+                    },
+                    body: JSON.stringify({ status })
+                });
+                if (res.ok) {
+                    showToast(`Shelter marked as ${status}`, 'success');
+                    loadShelters();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Update failed', 'error');
+                }
+            } catch (err) { console.error(err); }
+        }
+
+        function viewDetails(id) {
+            const s = allShelters.find(x => x._id === id);
+            if (!s) return;
+
+            document.getElementById('detail-org-name').textContent = s.organizationName;
+            document.getElementById('detail-reg-num').textContent = s.registrationNumber || 'N/A';
+            document.getElementById('detail-contact-person').textContent = s.contactPerson;
+            document.getElementById('detail-email').textContent = s.contactEmail;
+            document.getElementById('detail-capacity').textContent = `${s.capacity} animals`;
+            document.getElementById('detail-address').textContent = s.address;
+            document.getElementById('detail-services').textContent = s.services.join(', ') || 'No services listed';
+
+            if (s.certification) {
+                document.getElementById('certification-container').style.display = 'block';
+                document.getElementById('detail-cert-link').href = s.certification;
+            } else {
+                document.getElementById('certification-container').style.display = 'none';
+            }
+
+            document.getElementById('detailsModal').style.display = 'flex';
+        }
+
+        function closeDetailsModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shelter Registration - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fas fa-paw"></i> StraySouls</a>
+            <a href="index.html" class="btn btn-outline" style="padding: 5px 15px; font-size: 0.9rem;">Back</a>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 3rem 20px;">
+        <div class="card" style="max-width: 700px; margin: 0 auto;">
+            <h2 class="text-center mb-1 text-primary">Partner With Us</h2>
+            <p class="text-center mb-2">Register your Shelter or NGO to reach more animals in need.</p>
+
+            <form id="shelter-form" onsubmit="handleShelterReg(event)">
+                <div class="form-group">
+                    <label>Organization Name</label>
+                    <input type="text" id="orgName" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Registration Number (if applicable)</label>
+                    <input type="text" id="regNum" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label>Contact Person</label>
+                    <input type="text" id="contactPerson" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Contact Email</label>
+                    <input type="email" id="contactEmail" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label>Address / Location</label>
+                    <textarea id="address" class="form-control" rows="2" required></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label>Capacity</label>
+                    <input type="number" id="capacity" class="form-control" placeholder="Max number of animals"
+                        required>
+                </div>
+
+                <div class="form-group">
+                    <label>Services Offered</label>
+                    <div id="services-checklist" style="display: flex; flex-direction: column; gap: 8px;">
+                        <label style="font-weight: normal;"><input type="checkbox" value="Medical Treatment"> Medical
+                            Treatment / Vet
+                            On-site</label>
+                        <label style="font-weight: normal;"><input type="checkbox" value="Long-term Shelter"> Long-term
+                            Shelter</label>
+                        <label style="font-weight: normal;"><input type="checkbox" value="Adoption Center"> Adoption
+                            Center</label>
+                        <label style="font-weight: normal;"><input type="checkbox" value="Spay/Neuter Program">
+                            Spay/Neuter Program</label>
+                        <label style="font-weight: normal;"><input type="checkbox" value="Ambulance Service"> Ambulance
+                            Service</label>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label>Upload Certification / Logo</label>
+                    <div class="upload-preview" onclick="document.getElementById('certification').click()">
+                        <div id="preview-text" class="text-center">
+                            <i class="fas fa-camera fa-2x mb-1"></i>
+                            <p>Click to upload certification or logo</p>
+                        </div>
+                        <img id="image-preview" src="" style="display: none;">
+                    </div>
+                    <input type="file" id="certification" class="form-control" accept="image/*,application/pdf"
+                        style="display: none;" onchange="previewImage(this)">
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Submit
+                    Application</button>
+            </form>
+        </div>
+    </div>
+
+    <script src="js/script.js"></script>
+    <script>
+        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                    document.getElementById('preview-text').style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        async function handleShelterReg(e) {
+            e.preventDefault();
+
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Submitting...';
+
+            const formData = new FormData();
+            formData.append('organizationName', document.getElementById('orgName').value);
+            formData.append('registrationNumber', document.getElementById('regNum').value);
+            formData.append('contactPerson', document.getElementById('contactPerson').value);
+            formData.append('contactEmail', document.getElementById('contactEmail').value);
+            formData.append('address', document.getElementById('address').value);
+            formData.append('capacity', document.getElementById('capacity').value);
+
+            // Get selected services
+            const selectedServices = [];
+            document.querySelectorAll('#services-checklist input[type="checkbox"]:checked').forEach(cb => {
+                selectedServices.push(cb.value);
+            });
+            formData.append('services', JSON.stringify(selectedServices));
+
+            // File upload
+            const fileInput = document.getElementById('certification');
+            if (fileInput.files.length > 0) {
+                formData.append('certification', fileInput.files[0]);
+            }
+
+            try {
+                const response = await fetch(`${API_BASE}/api/shelters/register`, {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showToast(data.msg, 'success');
+                    setTimeout(() => window.location.href = 'index.html', 2000);
+                } else {
+                    showToast(data.error || 'Failed to submit application', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
+            } catch (err) {
+                console.error('Error submitting shelter application:', err);
+                showToast('Server error. Please try again later.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        }
+    </script>
+</body>
+
+</html>

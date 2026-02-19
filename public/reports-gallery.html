@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reports Gallery - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .reports-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .report-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .report-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background: #eee;
+        }
+
+        .report-details {
+            padding: 1.5rem;
+        }
+
+        .report-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .urgency-tag {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .urgency-low {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .urgency-medium {
+            background: #fff3e0;
+            color: #ef6c00;
+        }
+
+        .urgency-high {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .urgency-critical {
+            background: #b71c1c;
+            color: white;
+        }
+
+        .status-badge {
+            font-size: 0.75rem;
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 4px;
+        }
+
+        .status-pending {
+            background: #eee;
+            color: #666;
+        }
+
+        .status-in-progress {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .status-resolved {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-paw"></i> StraySouls
+            </a>
+            <div class="nav-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="report.html">Report Stray</a></li>
+                <li><a href="reports-gallery.html" class="active">All Reports</a></li>
+                <li><a href="adopt.html">Adopt</a></li>
+                <li><a href="medical.html">Medical Help</a></li>
+                <li><a href="heatmap.html">Heatmap</a></li>
+                <li id="auth-links"></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 3rem 20px;">
+        <div class="text-center mb-4">
+            <h1 class="mb-1">Stray Animal Reports</h1>
+            <p>Real-time reports from our community members and volunteers.</p>
+        </div>
+
+        <div id="reports-container" class="reports-grid">
+            <div class="text-center" style="grid-column: 1/-1;">
+                <i class="fas fa-spinner fa-spin fa-3x mb-1 text-primary"></i>
+                <p>Loading reports...</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container text-center">
+            <p>&copy; <span id="current-year"></span> StraySouls. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+
+        document.addEventListener('DOMContentLoaded', loadGallery);
+
+        async function loadGallery() {
+            const container = document.getElementById('reports-container');
+            try {
+                const res = await fetch(`${API_BASE}/api/reports`);
+                const reports = await res.json();
+
+                if (!reports || reports.length === 0) {
+                    container.innerHTML = `
+                        <div class="text-center" style="grid-column: 1/-1; padding: 3rem;">
+                            <i class="fas fa-search-minus fa-3x mb-1" style="color: #ccc;"></i>
+                            <h3>No reports found</h3>
+                            <p>Be the first to help - <a href="report.html">report a stray animal</a> today!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                container.innerHTML = reports.map(r => `
+                    <div class="report-card">
+                        <img src="${r.image ? (r.image.startsWith('http') ? r.image : `${API_BASE}${r.image}`) : 'https://via.placeholder.com/400x200?text=No+Image'}" 
+                             alt="${r.animalType}" class="report-image">
+                        <div class="report-details">
+                            <div class="report-meta">
+                                <span class="urgency-tag urgency-${r.urgency || 'low'}">${r.urgency || 'Safe'}</span>
+                                <span class="status-badge status-${(r.status || 'pending').replace(' ', '-')}">${(r.status || 'pending').toUpperCase()}</span>
+                            </div>
+                            <h3 class="mb-1" style="text-transform: capitalize;">${r.animalType} in Need</h3>
+                            <p class="mb-1" style="color: #666; font-size: 0.9rem;">
+                                <i class="fas fa-map-marker-alt text-primary"></i> ${r.location.address || 'Unknown Location'}
+                            </p>
+                            <p class="mb-2" style="font-size: 0.95rem; line-height: 1.4; height: 3.8rem; overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;">
+                                ${r.description || 'No description provided.'}
+                            </p>
+                            <div style="font-size: 0.8rem; color: #999;">
+                                Reported on ${new Date(r.createdAt).toLocaleDateString()}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                console.error('Error loading gallery:', err);
+                container.innerHTML = `<div class="text-center" style="grid-column: 1/-1; color: red;">Error loading reports. Please try again later.</div>`;
+            }
+        }
+    </script>
+</body>
+
+</html>
