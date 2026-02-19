@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Report a Stray - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Maps script placeholder -->
+    <style>
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-paw"></i> StraySouls
+            </a>
+            <div class="nav-toggle">
+                <i class="fas fa-bars"></i>
+            </div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="report.html" class="active">Report Stray</a></li>
+
+                <li><a href="adopt.html">Adopt</a></li>
+                <li><a href="medical.html">Medical Help</a></li>
+                <li><a href="donate.html">Donate</a></li>
+                <li><a href="heatmap.html">Heatmap</a></li>
+                <li id="auth-links">
+                    <!-- JS will populate -->
+                </li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 3rem 20px;">
+        <h1 class="text-center mb-2">Report a Stray Animal</h1>
+
+        <div class="card" style="max-width: 800px; margin: 0 auto;">
+            <form onsubmit="handleReport(event)">
+
+                <!-- 1. Photo Upload -->
+                <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px;">1. Upload Photo</h3>
+                <div class="upload-preview" onclick="document.getElementById('file-upload').click()">
+                    <div id="preview-text" class="text-center">
+                        <i class="fas fa-camera fa-2x mb-1"></i>
+                        <p>Click to take a photo or upload</p>
+                    </div>
+                    <img id="image-preview" src="" style="display: none; width: 100%; height: 100%; object-fit: cover;">
+                </div>
+                <input type="file" id="file-upload" accept="image/*" capture="camera" style="display: none;"
+                    onchange="previewImage(this)">
+
+                <!-- 2. Location -->
+                <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 2rem;">2. Location</h3>
+                <div class="form-group">
+                    <button type="button" class="btn btn-outline mb-1" onclick="getLocation()">
+                        <i class="fas fa-map-marker-alt"></i> Get Current Location
+                    </button>
+                    <p id="location-status" style="font-size: 0.9rem; color: #666;"></p>
+                    <!-- Mock Map -->
+                    <div class="map-placeholder" id="map-view">
+                        Map View (Google Maps Integration)
+                    </div>
+                    <input type="text" class="form-control" id="address-input"
+                        placeholder="Or enter manual address/landmark">
+                </div>
+
+                <!-- 3. Details -->
+                <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 2rem;">3. Animal Details
+                </h3>
+                <div class="form-group">
+                    <label>Animal Type</label>
+                    <select class="form-control" id="animal-type">
+                        <option value="dog">Dog</option>
+                        <option value="cat">Cat</option>
+                        <option value="bird">Bird</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div class="form-group urgency-selector">
+                    <label style="display: block; margin-bottom: 0.5rem; font-weight: 500;">Condition / Urgency</label>
+
+                    <input type="radio" name="urgency" id="u-low" value="low" checked>
+                    <label for="u-low" class="u-low">Healthy / Safe</label>
+
+                    <input type="radio" name="urgency" id="u-medium" value="medium">
+                    <label for="u-medium" class="u-medium">Needs Shelter</label>
+
+                    <input type="radio" name="urgency" id="u-high" value="high">
+                    <label for="u-high" class="u-high">Injured / Critical</label>
+                </div>
+
+                <div class="form-group">
+                    <label>Description</label>
+                    <textarea class="form-control" rows="4"
+                        placeholder="Describe the animal, situation, or specific needs..."></textarea>
+                </div>
+
+                <button type="submit" id="submit-btn" class="btn btn-primary"
+                    style="width: 100%; font-size: 1.1rem; padding: 15px;">Submit Report</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container footer-bottom">
+            <p>&copy; <span id="current-year"></span> StraySouls.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+
+        function previewImage(input) {
+            if (input.files && input.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function (e) {
+                    document.getElementById('image-preview').src = e.target.result;
+                    document.getElementById('image-preview').style.display = 'block';
+                    document.getElementById('preview-text').style.display = 'none';
+                }
+                reader.readAsDataURL(input.files[0]);
+            }
+        }
+
+        function getLocation() {
+            const status = document.getElementById('location-status');
+            const mapView = document.getElementById('map-view');
+
+            if (!navigator.geolocation) {
+                status.textContent = "Geolocation is not supported by your browser";
+                return;
+            }
+
+            status.textContent = "Locating...";
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const lat = position.coords.latitude;
+                    const lng = position.coords.longitude;
+                    status.textContent = `Lat: ${lat}, Lng: ${lng}`;
+                    // Store coordinates in hidden fields if they existed, or just use them in handleReport
+                    window.currentLat = lat;
+                    window.currentLng = lng;
+
+                    status.innerHTML = `<i class="fas fa-check-circle text-success"></i> Location Captured Successfuly`;
+
+                    mapView.innerHTML = `<iframe width="100%" height="100%" frameborder="0" style="border:0"
+                        src="https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed">
+                    </iframe>`;
+                },
+                () => {
+                    status.textContent = "Unable to retrieve your location";
+                }
+            );
+        }
+
+        async function handleReport(e) {
+            e.preventDefault();
+
+            const fileInput = document.getElementById('file-upload');
+            const animalType = document.getElementById('animal-type').value;
+            const urgency = document.querySelector('input[name="urgency"]:checked').value;
+            const description = document.querySelector('textarea').value;
+            const address = document.getElementById('address-input').value;
+
+            // Validate image
+            if (fileInput.files.length === 0) {
+                showToast('Please upload a photo of the animal.', 'error');
+                return;
+            }
+
+            // Validate location
+            if (!window.currentLat || !window.currentLng) {
+                showToast('Please capture your location first.', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('lat', window.currentLat);
+            formData.append('lng', window.currentLng);
+            formData.append('address', address);
+            formData.append('animalType', animalType);
+            formData.append('urgency', urgency);
+            formData.append('description', description);
+
+            const submitBtn = document.getElementById('submit-btn');
+            const originalText = submitBtn.innerText;
+            submitBtn.disabled = true;
+            submitBtn.innerText = 'Submitting...';
+
+            try {
+                const token = localStorage.getItem('straySoulsToken');
+                const response = await fetch(`${API_BASE}/api/reports`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': token ? `Bearer ${token}` : ''
+                    },
+                    body: formData
+                });
+
+                if (response.ok) {
+                    showToast('Report submitted successfully!', 'success');
+                    delayedRedirect('dashboard.html');
+                } else {
+                    const error = await response.json();
+                    showToast('Error: ' + error.error, 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
+                }
+            } catch (err) {
+                console.error(err);
+                showToast('Failed to submit report. Please try again.', 'error');
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalText;
+            }
+        }
+    </script>
+</body>
+
+</html>

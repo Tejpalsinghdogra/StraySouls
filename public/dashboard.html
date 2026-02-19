@@ -1,0 +1,719 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dashboard-header {
+            background: white;
+            padding: 2rem 0;
+            border-bottom: 1px solid #eee;
+            margin-bottom: 2rem;
+        }
+
+        .user-welcome {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid #ddd;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            color: #7f8c8d;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: -2px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .status-tracker {
+            display: flex;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            margin-right: 5px;
+        }
+
+        .status-pending {
+            background-color: #f39c12;
+        }
+
+        .status-resolved {
+            background-color: #2ecc71;
+        }
+
+        .status-process {
+            background-color: #3498db;
+        }
+
+        .status-cancelled {
+            background-color: #e74c3c;
+        }
+
+        .item-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            margin-bottom: 1rem;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        @media (max-width: 600px) {
+            .item-card {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 1rem;
+            }
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            background: white;
+            padding: 2.5rem;
+            border-radius: 1.5rem;
+            max-width: 600px;
+            width: 90%;
+            max-height: 85vh;
+            overflow-y: auto;
+            position: relative;
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+            animation: modalIn 0.3s ease-out;
+        }
+
+        @keyframes modalIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 1.5rem;
+            right: 1.5rem;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #95a5a6;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: #2c3e50;
+        }
+
+        .modal-header {
+            border-bottom: 2px solid #f0f2f5;
+            padding-bottom: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .modal-body p {
+            margin-bottom: 0.8rem;
+            line-height: 1.6;
+        }
+
+        .modal-body strong {
+            color: #2c3e50;
+            display: inline-block;
+            width: 120px;
+        }
+
+        .detail-image {
+            width: 100%;
+            height: 250px;
+            object-fit: cover;
+            border-radius: 1rem;
+            margin-bottom: 1.5rem;
+            background-color: #f8f9fa;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fas fa-paw"></i> StraySouls</a>
+            <div class="nav-toggle"><i class="fas fa-bars"></i></div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="report.html">Report Stray</a></li>
+                <li><a href="adopt.html">Adopt</a></li>
+                <li><a href="donate.html">Donate</a></li>
+                <li><a href="#" onclick="logout()">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-header">
+        <div class="container user-welcome">
+            <div>
+                <h1>Hello, <span id="user-name">User</span>!</h1>
+                <p>Welcome to your dashboard.</p>
+                <div id="volunteer-status-container" style="margin-top: 10px; display: none;">
+                    <span id="volunteer-status-badge" class="badge"></span>
+                </div>
+            </div>
+            <div class="text-primary" style="font-size: 2rem;">
+                <i class="fas fa-user-circle"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="min-height: 50vh;">
+
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('reports')">My Reports</button>
+            <button class="tab-btn" onclick="switchTab('medical')">Medical Help</button>
+            <button class="tab-btn" onclick="switchTab('adoptions')">Adoption Requests</button>
+            <button class="tab-btn" onclick="switchTab('tasks')">Volunteer Tasks</button> <!-- Visible to volunteers -->
+        </div>
+
+        <!-- Reports Tab -->
+        <div id="reports" class="tab-content active">
+            <h3 class="mb-1">Recent Reports</h3>
+            <div id="reports-list">
+                <p class="text-center">Loading your reports...</p>
+            </div>
+        </div>
+
+        <!-- Medical Tab -->
+        <div id="medical" class="tab-content">
+            <h3 class="mb-1">My Medical Assistance Requests</h3>
+            <div id="medical-list">
+                <p class="text-center">Loading medical requests...</p>
+            </div>
+        </div>
+
+        <!-- Adoptions Tab -->
+        <div id="adoptions" class="tab-content">
+            <h3 class="mb-1">My Adoption Appointments</h3>
+            <div id="appointments-list">
+                <p class="text-center">Loading your appointments...</p>
+            </div>
+        </div>
+
+        <!-- Tasks Tab (Volunteer View) -->
+        <div id="tasks" class="tab-content">
+            <h3 class="mb-1">Available Tasks</h3>
+            <div id="open-tasks-list">
+                <p class="text-center">Loading available tasks...</p>
+            </div>
+
+            <h3 class="mb-1 mt-2" style="margin-top: 2.5rem;">My Ongoing Tasks</h3>
+            <div id="my-tasks-list">
+                <p class="text-center">Loading your tasks...</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Details Modal -->
+    <div id="detailsModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="modal-header-content" class="modal-header">
+                <h2>Details</h2>
+            </div>
+            <div id="modal-body-content" class="modal-body">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container footer-bottom">
+            <p>&copy; <span id="current-year"></span> StraySouls.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        // API Configuration
+        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+
+        // Init Dashboard
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('straySoulsUser'));
+            if (user) {
+                document.getElementById('user-name').textContent = user.name;
+
+                // If volunteer, show tasks tab by default
+                if (user.role === 'volunteer') {
+                    switchTab('tasks');
+                } else {
+                    // Hide volunteer tab if not a volunteer
+                    const volunteerTab = document.querySelector('.tab-btn[onclick*="tasks"]');
+                    if (volunteerTab) volunteerTab.style.display = 'none';
+
+                    // Check application status for non-volunteers
+                    checkVolunteerStatus(user.id);
+                }
+
+                // Load dynamic content
+                loadUserReports();
+                loadUserMedicalRequests();
+                loadUserAppointments();
+
+                // If volunteer role is already present, load tasks immediately
+                if (user.role === 'volunteer') {
+                    loadOpenTasks();
+                    loadMyTasks();
+                }
+            } else {
+                window.location.href = 'login.html';
+            }
+        });
+
+        async function loadUserReports() {
+            const token = localStorage.getItem('straySoulsToken');
+            const reportsList = document.getElementById('reports-list');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/reports`);
+                const reports = await response.json();
+
+                if (!Array.isArray(reports)) {
+                    reportsList.innerHTML = '<p class="text-center">No reports found.</p>';
+                    return;
+                }
+
+                const user = JSON.parse(localStorage.getItem('straySoulsUser'));
+                const userReports = reports.filter(r => r.userId === user.id);
+
+                if (userReports.length === 0) {
+                    reportsList.innerHTML = '<p class="text-center">No reports found.</p>';
+                    return;
+                }
+
+                reportsList.innerHTML = userReports.map((report) => {
+                    const reportData = JSON.stringify(report).replace(/'/g, "&apos;");
+                    return `
+                        <div class="item-card">
+                            <div>
+                                <h4>${report.animalType.charAt(0).toUpperCase() + report.animalType.slice(1)} at ${report.location.address || `Coords: ${report.location.lat.toFixed(4)}, ${report.location.lng.toFixed(4)}`}</h4>
+                                <p class="text-sm">Reported on: ${new Date(report.createdAt).toLocaleDateString()}</p>
+                                <div class="status-tracker">
+                                    <span class="status-dot status-${report.status === 'resolved' ? 'resolved' : 'pending'}"></span> 
+                                    ${report.status.charAt(0).toUpperCase() + report.status.slice(1)}
+                                </div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick='showDetails("report", ${reportData})'>View Details</button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading reports:', err);
+                reportsList.innerHTML = '<p class="text-center text-danger">Error loading reports.</p>';
+            }
+        }
+
+        async function loadUserMedicalRequests() {
+            const token = localStorage.getItem('straySoulsToken');
+            const medicalList = document.getElementById('medical-list');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/medical/my-requests`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch medical requests');
+                }
+
+                const requests = await response.json();
+
+                if (requests.length === 0) {
+                    medicalList.innerHTML = '<p class="text-center">No medical requests found.</p>';
+                    return;
+                }
+
+                medicalList.innerHTML = requests.map(req => {
+                    const reqData = JSON.stringify(req).replace(/'/g, "&apos;");
+                    return `
+                        <div class="item-card">
+                            <div>
+                                <h4>${req.injuryType}</h4>
+                                <p class="text-sm">Requested on: ${new Date(req.createdAt).toLocaleDateString()}</p>
+                                <div class="status-tracker">
+                                    <span class="status-dot status-${req.status}"></span> 
+                                    ${req.status.charAt(0).toUpperCase() + req.status.slice(1)}
+                                </div>
+                            </div>
+                            <button class="btn btn-outline btn-sm" onclick='showDetails("medical", ${reqData})'>View Details</button>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading medical requests:', err);
+                medicalList.innerHTML = '<p class="text-center text-danger">Error loading medical requests.</p>';
+            }
+        }
+
+        async function loadUserAppointments() {
+            const token = localStorage.getItem('straySoulsToken');
+            const appointmentsList = document.getElementById('appointments-list');
+
+            try {
+                const response = await fetch(`${API_BASE}/api/appointments`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.msg || 'Failed to fetch appointments');
+                }
+
+                const allAppointments = await response.json();
+                const appointments = allAppointments.filter(app => app.status !== 'cancelled');
+
+                if (!Array.isArray(appointments) || appointments.length === 0) {
+                    appointmentsList.innerHTML = '<p class="text-center">No appointments found.</p>';
+                    return;
+                }
+
+                appointmentsList.innerHTML = appointments.map(app => {
+                    const appData = JSON.stringify(app).replace(/'/g, "&apos;");
+                    return `
+                        <div class="item-card">
+                            <div>
+                                <h4>Appointment for ${app.report ? (app.report.animalType.charAt(0).toUpperCase() + app.report.animalType.slice(1)) : 'Unknown Animal'}</h4>
+                                <p class="text-sm">Scheduled for: ${new Date(app.date).toLocaleString()}</p>
+                                <div class="status-tracker">
+                                    <span class="status-dot status-${app.status}"></span> 
+                                    ${app.status.charAt(0).toUpperCase() + app.status.slice(1)}
+                                </div>
+                            </div>
+                            <div style="display: flex; gap: 8px;">
+                                <button class="btn btn-outline btn-sm" onclick='showDetails("appointment", ${appData})'>View</button>
+                                <button class="btn btn-danger btn-sm" onclick='cancelAppointment("${app._id}")'>Cancel</button>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            } catch (err) {
+                console.error('Error loading appointments:', err);
+                appointmentsList.innerHTML = '<p class="text-center text-danger">Error loading appointments.</p>';
+            }
+        }
+
+        async function cancelAppointment(id) {
+            showConfirm('Are you sure you want to cancel this appointment?', async () => {
+                const token = localStorage.getItem('straySoulsToken');
+                try {
+                    const response = await fetch(`${API_BASE}/api/appointments/${id}/cancel`, {
+                        method: 'PUT',
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (response.ok) {
+                        showToast('Appointment cancelled successfully', 'success');
+                        loadUserAppointments();
+                    } else {
+                        const error = await response.json();
+                        showToast(error.error || 'Failed to cancel appointment', 'error');
+                    }
+                } catch (err) {
+                    console.error('Error cancelling appointment:', err);
+                    showToast('Server error. Please try again later.', 'error');
+                }
+            });
+        }
+
+        async function checkVolunteerStatus(userId) {
+            try {
+                const response = await fetch(`${API_BASE}/api/volunteers/status/${userId}`);
+                const data = await response.json();
+
+                if (data.status && data.status !== 'none' && data.status !== 'approved') {
+                    const container = document.getElementById('volunteer-status-container');
+                    const badge = document.getElementById('volunteer-status-badge');
+
+                    container.style.display = 'block';
+                    badge.textContent = `Volunteer Application: ${data.status.toUpperCase()}`;
+
+                    if (data.status === 'pending') {
+                        badge.className = 'badge badge-pending';
+                    } else if (data.status === 'rejected') {
+                        badge.className = 'badge badge-danger';
+                    }
+                } else if (data.status === 'approved') {
+                    const volunteerTab = document.querySelector('.tab-btn[onclick*="tasks"]');
+                    if (volunteerTab) volunteerTab.style.display = 'block';
+
+                    const user = JSON.parse(localStorage.getItem('straySoulsUser'));
+                    if (user && user.role !== 'volunteer') {
+                        user.role = 'volunteer';
+                        localStorage.setItem('straySoulsUser', JSON.stringify(user));
+                    }
+
+                    if (volunteerTab && (volunteerTab.style.display === 'none' || !volunteerTab.style.display)) {
+                        volunteerTab.style.display = 'block';
+                        switchTab('tasks');
+                    }
+
+                    loadOpenTasks();
+                    loadMyTasks();
+                }
+            } catch (err) {
+                console.error('Error checking volunteer status:', err);
+            }
+        }
+
+        function showDetails(type, data) {
+            const modal = document.getElementById('detailsModal');
+            const header = document.getElementById('modal-header-content');
+            const body = document.getElementById('modal-body-content');
+
+            header.innerHTML = `<h2>${type.charAt(0).toUpperCase() + type.slice(1)} Details</h2>`;
+
+            let content = '';
+            if (type === 'report') {
+                let imageUrl = data.image || '';
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = `${API_BASE}/${imageUrl}`;
+                }
+
+                content = `
+                    ${imageUrl ? `<img src="${imageUrl}" alt="Stray" class="detail-image">` : ''}
+                    <p><strong>Animal:</strong> ${data.animalType.toUpperCase()}</p>
+                    <p><strong>Location:</strong> ${data.location.address || `${data.location.lat.toFixed(6)}, ${data.location.lng.toFixed(6)}`}</p>
+                    <p><strong>Map:</strong> <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" class="text-primary">View on Google Maps</a></p>
+                    <p><strong>Status:</strong> <span class="badge badge-${data.status === 'resolved' ? 'success' : 'pending'}">${data.status.toUpperCase()}</span></p>
+                    <p><strong>Urgency:</strong> ${data.urgency.toUpperCase()}</p>
+                    <p><strong>Description:</strong> ${data.description || 'No description provided'}</p>
+                    <p><strong>Reported:</strong> ${new Date(data.createdAt).toLocaleString()}</p>
+                `;
+            } else if (type === 'appointment') {
+                content = `
+                    <p><strong>Status:</strong> <span class="badge badge-${data.status === 'confirmed' ? 'success' : 'pending'}">${data.status.toUpperCase()}</span></p>
+                    <p><strong>Scheduled:</strong> ${new Date(data.date).toLocaleString()}</p>
+                    <p><strong>Message:</strong> ${data.message || 'No additional message'}</p>
+                    <button class="btn btn-danger btn-sm" style="margin-top: 10px;" onclick="cancelAppointment('${data._id}'); closeModal();">Cancel Appointment</button>
+                    <hr style="margin: 1.5rem 0; border: 0; border-top: 1px solid #eee;">
+                    <h3>Animal Details</h3>
+                    ${data.report ? `
+                        <p><strong>Type:</strong> ${data.report.animalType.toUpperCase()}</p>
+                        <p><strong>Location:</strong> ${data.report.location.address || `${data.report.location.lat.toFixed(6)}, ${data.report.location.lng.toFixed(6)}`}</p>
+                        <p><strong>Map:</strong> <a href="https://www.google.com/maps?q=${data.report.location.lat},${data.report.location.lng}" target="_blank" class="text-primary">View on Google Maps</a></p>
+                    ` : '<p>Animal details unavailable</p>'}
+                `;
+            } else if (type === 'medical') {
+                let imageUrl = data.image || '';
+                if (imageUrl && !imageUrl.startsWith('http')) {
+                    imageUrl = `${API_BASE}/${imageUrl}`;
+                }
+
+                content = `
+                    ${imageUrl ? `<img src="${imageUrl}" alt="Injury" class="detail-image">` : ''}
+                    <p><strong>Injury Type:</strong> ${data.injuryType}</p>
+                    <p><strong>Emergency:</strong> <span class="badge badge-${data.isEmergency ? 'danger' : 'success'}">${data.isEmergency ? 'YES' : 'NO'}</span></p>
+                    <p><strong>Status:</strong> <span class="badge badge-${data.status === 'resolved' ? 'success' : 'pending'}">${data.status.toUpperCase()}</span></p>
+                    <p><strong>Location:</strong> ${data.location.address}</p>
+                    <p><strong>Description:</strong> ${data.description || 'No description provided'}</p>
+                    <p><strong>Requested:</strong> ${new Date(data.createdAt).toLocaleString()}</p>
+                `;
+            } else if (type === 'task') {
+                content = `
+                    <p><strong>Title:</strong> ${data.title}</p>
+                    <p><strong>Description:</strong> ${data.description}</p>
+                    <p><strong>Urgency:</strong> <span class="badge badge-${data.urgency === 'high' ? 'danger' : data.urgency === 'medium' ? 'warning' : 'success'}">${data.urgency.toUpperCase()}</span></p>
+                    <p><strong>Status:</strong> ${data.status.toUpperCase()}</p>
+                    <p><strong>Location:</strong> ${data.location.address || 'N/A'}</p>
+                    <p><strong>Created:</strong> ${new Date(data.createdAt).toLocaleString()}</p>
+                    <hr style="margin: 1rem 0;">
+                    <a href="https://www.google.com/maps?q=${data.location.lat},${data.location.lng}" target="_blank" class="btn btn-outline btn-sm">Navigate on Map</a>
+                `;
+            }
+
+            body.innerHTML = content;
+            modal.style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('detailsModal').style.display = 'none';
+        }
+
+        window.onclick = function (event) {
+            const modal = document.getElementById('detailsModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(btn => {
+                if (btn.innerText.toLowerCase().includes(tabId) ||
+                    (tabId === 'reports' && btn.innerText.includes('Reports')) ||
+                    (tabId === 'medical' && btn.innerText.includes('Medical')) ||
+                    (tabId === 'adoptions' && btn.innerText.includes('Adoption')) ||
+                    (tabId === 'tasks' && btn.innerText.includes('Tasks'))) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        async function loadOpenTasks() {
+            const token = localStorage.getItem('straySoulsToken');
+            const list = document.getElementById('open-tasks-list');
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tasks = await res.json();
+
+                if (!Array.isArray(tasks)) {
+                    list.innerHTML = `<p class="text-center text-danger">Error: ${tasks.error || 'Failed to load tasks'}</p>`;
+                    return;
+                }
+
+                if (tasks.length === 0) {
+                    list.innerHTML = '<p class="text-center">No open tasks available right now. Check back later!</p>';
+                    return;
+                }
+                list.innerHTML = tasks.map(t => `
+                    <div class="item-card" style="border-left: 4px solid ${t.urgency === 'high' ? '#e74c3c' : t.urgency === 'medium' ? '#f1c40f' : '#2ecc71'}">
+                        <div>
+                            <h4>${t.title}</h4>
+                            <p>${t.description}</p>
+                            <p class="text-sm">Location: ${t.location.address || 'Specified on map'}</p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-primary btn-sm" onclick="acceptTask('${t._id}')">Accept</button>
+                            <button class="btn btn-outline btn-sm" onclick="declineTask('${t._id}')">Decline</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-danger">Error loading tasks</p>';
+            }
+        }
+
+        async function loadMyTasks() {
+            const token = localStorage.getItem('straySoulsToken');
+            const list = document.getElementById('my-tasks-list');
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/my-tasks`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tasks = await res.json();
+                if (tasks.length === 0) {
+                    list.innerHTML = '<p class="text-center">You haven\'t accepted any tasks yet.</p>';
+                    return;
+                }
+                list.innerHTML = tasks.map(t => `
+                    <div class="item-card">
+                        <div>
+                            <h4>${t.title}</h4>
+                            <p class="text-sm">Status: <strong>${t.status.toUpperCase()}</strong></p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn btn-outline btn-sm" onclick='showDetails("task", ${JSON.stringify(t)})'>Details</button>
+                            <button class="btn btn-danger btn-sm" onclick='declineTask("${t._id}")'>Cancel</button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-danger">Error loading your tasks</p>';
+            }
+        }
+
+        async function acceptTask(taskId) {
+            const token = localStorage.getItem('straySoulsToken');
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/accept`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    showToast('Task accepted!', 'success');
+                    loadOpenTasks();
+                    loadMyTasks();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to accept task', 'error');
+                }
+            } catch (err) {
+                showToast('Error accepting task', 'error');
+            }
+        }
+
+        async function declineTask(taskId) {
+            const token = localStorage.getItem('straySoulsToken');
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/reject`, {
+                    method: 'PUT',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    showToast('Task declined/updated', 'success');
+                    loadOpenTasks();
+                    loadMyTasks();
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Failed to decline task', 'error');
+                }
+            } catch (err) {
+                showToast('Error declining task', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

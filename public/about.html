@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About Us - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fas fa-paw"></i> StraySouls</a>
+            <div class="nav-toggle"><i class="fas fa-bars"></i></div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="report.html">Report Stray</a></li>
+                <li><a href="adopt.html">Adopt</a></li>
+                <li><a href="medical.html">Medical Help</a></li>
+                <li><a href="donate.html">Donate</a></li>
+                <li><a href="heatmap.html">Heatmap</a></li>
+                <li id="auth-links"><!-- JS --></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container" style="padding: 4rem 20px;">
+        <div class="text-center mb-2">
+            <h1 class="text-primary">Our Mission</h1>
+            <p style="max-width: 600px; margin: 0 auto;">To build a compassionate community where every stray animal
+                receives care, love, and a forever home. We leverage technology to connect rescuers, shelters, and
+                animal lovers.</p>
+        </div>
+
+        <div class="card mb-2" style="background-color: var(--background-light);">
+            <div class="features-grid" style="margin-top: 0;">
+                <div class="text-center">
+                    <h2 class="text-primary">10k+</h2>
+                    <p>Animals Helped</p>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-primary">50+</h2>
+                    <p>Partner NGOs</p>
+                </div>
+                <div class="text-center">
+                    <h2 class="text-primary">24/7</h2>
+                    <p>Emergency Support</p>
+                </div>
+            </div>
+        </div>
+
+        <h2 class="text-center mb-2">Meet the Team</h2>
+        <div class="features-grid">
+            <div class="text-center">
+                <img src="https://randomuser.me/api/portraits/women/65.jpg" alt="Team"
+                    style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1rem;">
+                <h4>Jane Doe</h4>
+                <p>Founder & CEO</p>
+            </div>
+            <div class="text-center">
+                <img src="https://randomuser.me/api/portraits/men/32.jpg" alt="Team"
+                    style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1rem;">
+                <h4>John Smith</h4>
+                <p>Head of Operations</p>
+            </div>
+            <div class="text-center">
+                <img src="https://randomuser.me/api/portraits/women/43.jpg" alt="Team"
+                    style="width: 120px; height: 120px; border-radius: 50%; margin: 0 auto 1rem;">
+                <h4>Emily Chen</h4>
+                <p>Lead Veterinarian</p>
+            </div>
+        </div>
+
+        <hr style="margin: 4rem 0; border: 0; border-top: 1px solid #ddd;">
+
+        <div class="card" style="max-width: 800px; margin: 0 auto;">
+            <h2 class="text-center mb-1">Contact Us</h2>
+            <form onsubmit="handleContact(event)">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input type="text" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>Message</label>
+                    <textarea class="form-control" rows="4" required></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary">Send Message</button>
+            </form>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container footer-bottom">
+            <p>&copy; <span id="current-year"></span> StraySouls.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        function handleContact(e) {
+            e.preventDefault();
+            showAlert("Message Sent! We'll get back to you soon.");
+        }
+    </script>
+</body>
+
+</html>

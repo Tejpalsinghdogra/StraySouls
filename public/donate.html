@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Donate - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .donation-hero {
+            background: linear-gradient(rgba(46, 204, 113, 0.9), rgba(52, 152, 219, 0.9)), url('https://images.unsplash.com/photo-1599406560943-7cb31c3c9888?ixlib=rb-4.0.3&auto=format&fit=crop&w=1920&q=80');
+            background-size: cover;
+            color: white;
+            padding: 4rem 20px;
+            text-align: center;
+        }
+
+        .donation-container {
+            max-width: 900px;
+            margin: -50px auto 3rem;
+            position: relative;
+            z-index: 10;
+        }
+
+        .donation-box {
+            background: white;
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+            padding: 2rem;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .donation-box {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .amount-options {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 1.5rem;
+        }
+
+        .amount-btn {
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: var(--radius);
+            background: none;
+            cursor: pointer;
+            font-weight: bold;
+            transition: var(--transition);
+        }
+
+        .amount-btn:hover,
+        .amount-btn.active {
+            border-color: var(--primary-color);
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .impact-section {
+            padding: 3rem 0;
+            background-color: var(--background-light);
+        }
+
+        .impact-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: var(--radius);
+            text-align: center;
+            box-shadow: var(--shadow);
+            margin-bottom: 2rem;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo">
+                <i class="fas fa-paw"></i> StraySouls
+            </a>
+            <div class="nav-toggle"><i class="fas fa-bars"></i></div>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="report.html">Report Stray</a></li>
+                <li><a href="adopt.html">Adopt</a></li>
+                <li><a href="medical.html">Medical Help</a></li>
+                <li><a href="donate.html" class="active">Donate</a></li>
+                <li><a href="heatmap.html">Heatmap</a></li>
+                <li id="auth-links"><!-- JS populated --></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="donation-hero">
+        <h1>Your Support Saves Lives</h1>
+        <p>100% of your donation goes directly to medical care, food, and shelter for stray animals.</p>
+    </div>
+
+    <div class="container donation-container">
+        <div class="donation-box">
+            <!-- Left: Form -->
+            <div>
+                <h3 class="mb-1">Make a Donation</h3>
+                <div class="btn-group mb-1">
+                    <button class="btn btn-sm btn-primary" onclick="setFrequency('one-time')">One Time</button>
+                    <button class="btn btn-sm btn-outline" onclick="setFrequency('monthly')">Monthly</button>
+                </div>
+
+                <label>Select Amount</label>
+                <div class="amount-options">
+                    <button class="amount-btn active" onclick="selectAmount(10)">$10</button>
+                    <button class="amount-btn" onclick="selectAmount(25)">$25</button>
+                    <button class="amount-btn" onclick="selectAmount(50)">$50</button>
+                    <button class="amount-btn" onclick="selectAmount(100)">$100</button>
+                    <button class="amount-btn" onclick="selectAmount(250)">$250</button>
+                    <input type="number" class="amount-btn" placeholder="Custom" style="text-align: center;"
+                        onfocus="clearActiveAmounts()">
+                </div>
+
+                <div class="form-group">
+                    <label>Payment Method</label>
+                    <div style="display: flex; gap: 10px; margin-bottom: 1rem;">
+                        <button class="btn btn-outline"><i class="fab fa-cc-visa"></i> Card</button>
+                        <button class="btn btn-outline"><i class="fab fa-paypal"></i> PayPal</button>
+                        <button class="btn btn-outline"><i class="fas fa-qrcode"></i> UPI</button>
+                    </div>
+                </div>
+
+                <button id="donate-btn" class="btn btn-primary" onclick="handleDonation()"
+                    style="width: 100%; padding: 15px; font-size: 1.1rem;">Donate
+                    Now</button>
+            </div>
+
+            <!-- Right: Impact -->
+            <div style="background-color: #f8f9fa; padding: 1.5rem; border-radius: var(--radius);">
+                <h3 class="mb-1">Your Impact</h3>
+                <ul style="list-style: none;">
+                    <li class="mb-1"><i class="fas fa-check-circle text-primary"></i> <strong>$10</strong> feeds a stray
+                        dog for a week.</li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-primary"></i> <strong>$25</strong> provides
+                        basic vaccination.</li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-primary"></i> <strong>$50</strong> covers
+                        emergency first aid.</li>
+                    <li class="mb-1"><i class="fas fa-check-circle text-primary"></i> <strong>$100+</strong> supports
+                        shelter operations.</li>
+                </ul>
+                <div style="margin-top: 2rem; text-align: center;">
+                    <i class="fas fa-heart fa-3x" style="color: #e74c3c;"></i>
+                    <p style="margin-top: 10px;">Thank you for being their hero.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Additional Impact Section -->
+    <section class="impact-section">
+        <div class="container text-center">
+            <h2 class="mb-2">Where Your Money Goes</h2>
+            <div class="features-grid">
+                <div class="impact-card">
+                    <i class="fas fa-utensils fa-2x text-primary mb-1"></i>
+                    <h4>Food & Nutrition</h4>
+                    <p>Ensuring no animal goes to sleep hungry.</p>
+                </div>
+                <div class="impact-card">
+                    <i class="fas fa-user-md fa-2x text-primary mb-1"></i>
+                    <h4>Medical Care</h4>
+                    <p>Surgeries, vaccinations, and recovery treatments.</p>
+                </div>
+                <div class="impact-card">
+                    <i class="fas fa-home fa-2x text-primary mb-1"></i>
+                    <h4>Shelter Maintenance</h4>
+                    <p>Safe and warm spaces for rescue and rehabilitation.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <footer style="margin-top: 0;">
+        <div class="container footer-bottom">
+            <p>&copy; <span id="current-year"></span> StraySouls.</p>
+        </div>
+    </footer>
+
+    <script src="js/script.js"></script>
+    <script>
+        function selectAmount(amount) {
+            clearActiveAmounts();
+            // Find button with specific text and add active class
+            const buttons = document.querySelectorAll('.amount-btn');
+            buttons.forEach(btn => {
+                if (btn.innerText.includes(amount)) {
+                    btn.classList.add('active');
+                }
+            });
+        }
+
+        function clearActiveAmounts() {
+            document.querySelectorAll('.amount-btn').forEach(btn => btn.classList.remove('active'));
+        }
+
+        function setFrequency(freq) {
+            // Toggle logic for One-time vs Monthly buttons
+        }
+
+        async function handleDonation() {
+            const donateBtn = document.getElementById('donate-btn');
+            const originalText = donateBtn.innerText;
+            donateBtn.disabled = true;
+            donateBtn.innerText = 'Processing...';
+
+            // Mock payment processing
+            setTimeout(() => {
+                showToast('Thank you for your generous donation!', 'success');
+                donateBtn.disabled = false;
+                donateBtn.innerText = originalText;
+            }, 2000);
+        }
+    </script>
+</body>
+
+</html>
