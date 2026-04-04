@@ -20,7 +20,8 @@ const reportSchema = new mongoose.Schema({
     },
     animalType: {
         type: String,
-        enum: ['dog', 'cat', 'bird', 'other'],
+        required: true,
+        enum: ['dog', 'cat', 'bird', 'cattle', 'other'],
         default: 'other'
     },
     urgency: {

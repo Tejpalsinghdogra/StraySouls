@@ -2,7 +2,7 @@ const MedicalRequest = require('../models/MedicalRequest');
 
 exports.createMedicalRequest = async (req, res) => {
     try {
-        const { lat, lng, address, injuryType, description, isEmergency } = req.body;
+        const { lat, lng, address, animalType, injuryType, description, isEmergency } = req.body;
         
         if (!req.file) {
             return res.status(400).json({ error: 'Image is required' });
@@ -15,6 +15,7 @@ exports.createMedicalRequest = async (req, res) => {
                 lng: parseFloat(lng),
                 address
             },
+            animalType: animalType || 'other',
             injuryType,
             description,
             isEmergency: isEmergency === 'true' || isEmergency === true,

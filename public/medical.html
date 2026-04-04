@@ -115,6 +115,29 @@
                 </div>
 
                 <div class="form-group">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label style="margin-bottom: 0;">Detected Animal Type</label>
+                        <button type="button" class="btn btn-sm btn-outline" id="change-type-btn" style="padding: 2px 8px; font-size: 0.8rem; display: none;" onclick="toggleTypeSelection()">Not a <span id="btn-type-text">...</span>? Change</button>
+                    </div>
+                    
+                    <div id="type-display-container">
+                        <div id="animal-type-display" class="form-control" style="background: #f9f9f9; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                            <span id="type-text">Pending Analysis...</span>
+                        </div>
+                    </div>
+
+                    <select id="manual-animal-type" class="form-control" style="display: none;" onchange="updateManualType(this.value)">
+                        <option value="dog">Dog</option>
+                        <option value="cat">Cat</option>
+                        <option value="bird">Bird</option>
+                        <option value="cattle">Cattle (Cow/Buffalo)</option>
+                        <option value="other">Other</option>
+                    </select>
+
+                    <input type="hidden" id="animal-type" value="other">
+                </div>
+
+                <div class="form-group">
                     <label>Type of Injury / Condition</label>
                     <select id="injury-type" class="form-control" required>
                         <option value="Visible Wounds">Visible Wounds</option>
@@ -180,19 +203,73 @@
         </div>
     </div>
 
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="js/script.js"></script>
+    <script src="js/imageVerifier.js"></script>
     <script>
         const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
 
-        function previewImage(input) {
+        function toggleTypeSelection() {
+            const display = document.getElementById('type-display-container');
+            const select = document.getElementById('manual-animal-type');
+            const btn = document.getElementById('change-type-btn');
+            
+            if (select.style.display === 'none') {
+                display.style.display = 'none';
+                select.style.display = 'block';
+                btn.innerText = 'Go back to AI detection';
+            } else {
+                display.style.display = 'block';
+                select.style.display = 'none';
+                btn.innerHTML = `Not a <span id="btn-type-text">${document.getElementById('animal-type').value.toUpperCase()}</span>? Change`;
+            }
+        }
+
+        function updateManualType(val) {
+            document.getElementById('animal-type').value = val;
+            document.getElementById('type-text').innerHTML = `<i class="fas fa-paw"></i> ${val.toUpperCase()}`;
+            document.getElementById('btn-type-text').innerText = val.toUpperCase();
+        }
+
+        async function previewImage(input) {
+            const previewImg = document.getElementById('image-preview');
+            const previewText = document.getElementById('preview-text');
+            const submitBtn = document.getElementById('submit-btn');
+
             if (input.files && input.files[0]) {
+                const file = input.files[0];
                 const reader = new FileReader();
                 reader.onload = function (e) {
-                    document.getElementById('image-preview').src = e.target.result;
-                    document.getElementById('image-preview').style.display = 'block';
-                    document.getElementById('preview-text').style.display = 'none';
+                    previewImg.src = e.target.result;
+                    previewImg.style.display = 'block';
+                    previewText.style.display = 'none';
                 }
-                reader.readAsDataURL(input.files[0]);
+                reader.readAsDataURL(file);
+
+                // AI Processing
+                submitBtn.disabled = true;
+                const originalBtnText = submitBtn.innerText;
+                submitBtn.innerText = "Analyzing Animal...";
+
+                const result = await window.verifyAnimalImage(file);
+                
+                if (result.isAnimal && result.animalType) {
+                    const typeInput = document.getElementById('animal-type');
+                    const typeDisplay = document.getElementById('type-text');
+                    const changeBtn = document.getElementById('change-type-btn');
+                    const btnTypeText = document.getElementById('btn-type-text');
+
+                    typeInput.value = result.animalType;
+                    typeDisplay.innerHTML = `<i class="fas fa-paw"></i> ${result.animalType.toUpperCase()}`;
+                    btnTypeText.innerText = result.animalType.toUpperCase();
+                    changeBtn.style.display = 'block';
+
+                    showToast(`AI detected a ${result.animalType}.`, "success");
+                }
+
+                submitBtn.disabled = false;
+                submitBtn.innerText = originalBtnText;
             }
         }
 
@@ -242,6 +319,7 @@
             formData.append('lat', window.currentLat);
             formData.append('lng', window.currentLng);
             formData.append('address', address);
+            formData.append('animalType', document.getElementById('animal-type').value);
             formData.append('injuryType', injuryType);
             formData.append('description', description);
             formData.append('isEmergency', isEmergency);

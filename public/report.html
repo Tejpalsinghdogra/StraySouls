@@ -78,13 +78,26 @@
                 <h3 style="border-bottom: 1px solid #eee; padding-bottom: 10px; margin-top: 2rem;">3. Animal Details
                 </h3>
                 <div class="form-group">
-                    <label>Animal Type</label>
-                    <select class="form-control" id="animal-type">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                        <label style="margin-bottom: 0;">Detected Animal Type</label>
+                        <button type="button" class="btn btn-sm btn-outline" id="change-type-btn" style="padding: 2px 8px; font-size: 0.8rem; display: none;" onclick="toggleTypeSelection()">Not a <span id="btn-type-text">...</span>? Change</button>
+                    </div>
+                    
+                    <div id="type-display-container">
+                        <div id="animal-type-display" class="form-control" style="background: #f9f9f9; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                            <span id="type-text">Pending Analysis...</span>
+                        </div>
+                    </div>
+
+                    <select id="manual-animal-type" class="form-control" style="display: none;" onchange="updateManualType(this.value)">
                         <option value="dog">Dog</option>
                         <option value="cat">Cat</option>
                         <option value="bird">Bird</option>
+                        <option value="cattle">Cattle (Cow/Buffalo)</option>
                         <option value="other">Other</option>
                     </select>
+
+                    <input type="hidden" id="animal-type" value="other">
                 </div>
 
                 <div class="form-group urgency-selector">
@@ -133,6 +146,29 @@
             if(loadingMsg) loadingMsg.style.display = 'none';
         });
 
+        function toggleTypeSelection() {
+            const display = document.getElementById('type-display-container');
+            const select = document.getElementById('manual-animal-type');
+            const btn = document.getElementById('change-type-btn');
+            
+            if (select.style.display === 'none') {
+                display.style.display = 'none';
+                select.style.display = 'block';
+                btn.innerText = 'Go back to AI detection';
+            } else {
+                display.style.display = 'block';
+                select.style.display = 'none';
+                btn.innerHTML = `Not a <span id="btn-type-text">${document.getElementById('animal-type').value.toUpperCase()}</span>? Change`;
+            }
+        }
+
+        function updateManualType(val) {
+            document.getElementById('animal-type').value = val;
+            // Update the display text just in case they go back
+            document.getElementById('type-text').innerHTML = `<i class="fas fa-paw"></i> ${val.toUpperCase()}`;
+            document.getElementById('btn-type-text').innerText = val.toUpperCase();
+        }
+
         document.addEventListener('animalModelError', () => {
             const loadingMsg = document.getElementById('model-loading-msg');
             if(loadingMsg) {
@@ -169,12 +205,27 @@
                         statusEl.innerText = "Verification unavailable — proceed with submission.";
                         statusEl.style.color = "orange";
                     } else {
-                        statusEl.innerHTML = `<i class="fas fa-check"></i> Image verified successfully`;
+                        // AUTO-FILL ANIMAL TYPE
+                        if (result.animalType) {
+                            const typeInput = document.getElementById('animal-type');
+                            const typeDisplay = document.getElementById('type-text');
+                            const changeBtn = document.getElementById('change-type-btn');
+                            const btnTypeText = document.getElementById('btn-type-text');
+
+                            typeInput.value = result.animalType;
+                            typeDisplay.innerHTML = `<i class="fas fa-paw"></i> ${result.animalType.toUpperCase()}`;
+                            btnTypeText.innerText = result.animalType.toUpperCase();
+                            changeBtn.style.display = 'block';
+
+                            statusEl.innerHTML = `<i class="fas fa-check-circle"></i> AI confirmed detection!`;
+                        } else {
+                            statusEl.innerHTML = `<i class="fas fa-check"></i> Image verified successfully`;
+                        }
                         statusEl.style.color = "green";
                     }
                     submitBtn.disabled = false;
                 } else {
-                    statusEl.innerText = "⚠️ No animal detected in this image. Please upload a clear photo of the stray animal.";
+                    statusEl.innerText = "⚠️ No animal detected. Please upload a clear photo of the stray.";
                     statusEl.style.color = "red";
                     input.value = ""; // clear input
                     submitBtn.disabled = true;

@@ -40,7 +40,7 @@ exports.analyzeAnimalImage = async (imageUrl) => {
 Rules:
 - "isInjured": true if the animal appears wounded, sick, bleeding, limping, or in visible distress.
 - "urgencyLevel": one of "low", "medium", or "high". Use "high" if the animal is critically injured or in immediate danger.
-- "animalType": one of "dog", "cat", "bird", or "other".
+- "animalType": one of "dog", "cat", "bird", "cattle", or "other".
 - "aiDescription": a 1-2 sentence factual description of the animal's condition for the report.
 
 Respond with ONLY this JSON structure:
@@ -75,7 +75,7 @@ Respond with ONLY this JSON structure:
 
         // Validate and sanitise values against allowed enums
         const validUrgency = ['low', 'medium', 'high'];
-        const validAnimalType = ['dog', 'cat', 'bird', 'other'];
+        const validAnimalType = ['dog', 'cat', 'bird', 'cattle', 'other'];
 
         return {
             isAnimal:      true,

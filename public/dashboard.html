@@ -681,6 +681,7 @@
 
                 content = `
                     ${imageUrl ? `<img src="${imageUrl}" alt="Injury" class="detail-image">` : ''}
+                    <p><strong>Animal Type:</strong> ${data.animalType ? data.animalType.toUpperCase() : 'OTHER'}</p>
                     <p><strong>Injury Type:</strong> ${data.injuryType}</p>
                     <p><strong>Emergency:</strong> <span class="badge badge-${data.isEmergency ? 'danger' : 'success'}">${data.isEmergency ? 'YES' : 'NO'}</span></p>
                     <p><strong>Status:</strong> <span class="badge badge-${data.status === 'resolved' ? 'success' : 'pending'}">${data.status.toUpperCase()}</span></p>

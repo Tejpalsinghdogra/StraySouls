@@ -1,26 +1,18 @@
+const ANIMAL_CATEGORIES = {
+    dog: ["dog", "retriever", "terrier", "spaniel", "hound", "pug", "husky", "malamute", "collie", "shepherd", "poodle", "mastiff", "bulldog", "corgi", "chihuahua", "shiba", "akita", "samoyed", "chow", "dalmatian", "pinscher", "schnauzer", "boxer", "beagle", "shih", "maltese", "papillon", "basenji", "setter", "pointer", "weimaraner", "vizsla", "kuvasz", "kelpie", "malinois", "groenendael", "schipperke", "leonberg", "newfoundland", "pyrenees", "bernese", "dingo", "dhole", "appenzeller", "entlebucher", "brabancon", "griffon"],
+    cat: ["cat", "kitten", "tabby", "tiger", "lion", "leopard", "cheetah", "cougar", "lynx", "panther", "siamese", "persian", "feline"],
+    bird: ["bird", "owl", "eagle", "hawk", "falcon", "parrot", "macaw", "cockatoo", "pigeon", "dove", "duck", "goose", "swan", "peacock", "penguin", "ostrich", "emu", "chicken", "hen", "cock", "finch", "bunting", "robin", "bulbul", "jay", "magpie", "chickadee", "toucan", "grouse", "partridge", "kite", "vulture", "lorikeet", "hornbill", "hummingbird"],
+    cattle: ["cow", "bull", "calf", "buffalo", "ox", "bison", "zebu", "yak", "camel", "llama", "alpaca"]
+};
+
+// Flat list for global detection
 const ANIMAL_KEYWORDS = [
-    // General
-    "animal", "stray", "pet", "wildlife", "kitten", "puppy", "feline", "canine",
-    
-    // Cats
-    "cat", "tabby", "tiger", "lion", "leopard", "cheetah", "cougar", "lynx", "panther", "siamese", "persian",
-
-    // Dogs
-    "dog", "retriever", "terrier", "spaniel", "hound", "pug", "husky", "malamute", "collie", 
-    "shepherd", "poodle", "mastiff", "bulldog", "corgi", "chihuahua", "shiba", "akita", 
-    "samoyed", "chow", "dalmatian", "pinscher", "schnauzer", "boxer", "beagle", "shih", 
-    "maltese", "papillon", "basenji", "setter", "pointer", "weimaraner", "vizsla", "kuvasz", 
-    "kelpie", "malinois", "groenendael", "schipperke", "leonberg", "newfoundland", "pyrenees", 
-    "bernese", "dingo", "dhole", "appenzeller", "entlebucher", "brabancon", "griffon",
-    
-    // Birds
-    "bird", "owl", "eagle", "hawk", "falcon", "parrot", "macaw", "cockatoo", "pigeon", 
-    "dove", "duck", "goose", "swan", "peacock", "penguin", "ostrich", "emu", "chicken", 
-    "hen", "cock", "finch", "bunting", "robin", "bulbul", "jay", "magpie", "chickadee", 
-    "toucan", "grouse", "partridge", "kite", "vulture", "lorikeet", "hornbill", "hummingbird",
-
-    // Others
-    "rabbit", "hare", "horse", "pony", "cow", "calf", "bull", "sheep", "goat", "pig", "swine", "boar",
+    "animal", "stray", "pet", "wildlife", "mammal", "puppy", "canine",
+    ...ANIMAL_CATEGORIES.dog,
+    ...ANIMAL_CATEGORIES.cat,
+    ...ANIMAL_CATEGORIES.bird,
+    ...ANIMAL_CATEGORIES.cattle,
+    "rabbit", "hare", "horse", "pony", "sheep", "goat", "pig", "swine", "boar",
     "squirrel", "rat", "mouse", "hamster", "gerbil", "ferret", "weasel", "mink", "badger", "skunk", 
     "racoon", "raccoon", "bear", "fox", "wolf", "coyote", "deer", "elk", "moose", "antelope", 
     "gazelle", "zebra", "camel", "llama", "alpaca", "giraffe", "elephant", "rhino", "hippo", 
@@ -30,6 +22,14 @@ const ANIMAL_KEYWORDS = [
     "seal", "walrus", "otter", "beaver", "monkey", "macaque", "chimpanzee", "gorilla", 
     "orangutan", "baboon", "lemur"
 ];
+
+function inferAnimalType(className) {
+    const lower = className.toLowerCase();
+    for (const [type, keywords] of Object.entries(ANIMAL_CATEGORIES)) {
+        if (keywords.some(k => lower.includes(k))) return type;
+    }
+    return "other";
+}
 
 window.mobilenetModel = null;
 window.mobilenetLoaded = false;
@@ -96,14 +96,16 @@ window.verifyAnimalImage = async function(imageFile) {
             return {
                 isAnimal: true,
                 confidence: bestMatch.probability,
-                detectedClass: bestMatch.className
+                detectedClass: bestMatch.className,
+                animalType: inferAnimalType(bestMatch.className)
             };
         }
 
         return {
             isAnimal: false,
             confidence: bestMatch ? bestMatch.probability : 0,
-            detectedClass: bestMatch ? bestMatch.className : null
+            detectedClass: bestMatch ? bestMatch.className : null,
+            animalType: null
         };
     } catch (err) {
         console.error("TensorFlow verification failed:", err);
@@ -111,7 +113,8 @@ window.verifyAnimalImage = async function(imageFile) {
         return {
             isAnimal: true,
             confidence: 1,
-            detectedClass: "unknown (fail-open)"
+            detectedClass: "unknown (fail-open)",
+            animalType: "other"
         };
     }
 };

@@ -19,6 +19,12 @@ const medicalRequestSchema = new mongoose.Schema({
             required: true
         }
     },
+    animalType: {
+        type: String,
+        required: true,
+        enum: ['dog', 'cat', 'bird', 'cattle', 'other'],
+        default: 'other'
+    },
     injuryType: {
         type: String,
         required: true,
