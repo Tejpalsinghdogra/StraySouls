@@ -168,7 +168,7 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="js/script.js"></script>
     <script>
-        const API_BASE = (window.location.port === '5500' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+        const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
         const socket = io(API_BASE);
         let resolvedData = [];
 

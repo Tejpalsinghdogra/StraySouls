@@ -23,24 +23,16 @@
             <p class="text-center mb-2">Register your Shelter or NGO to reach more animals in need.</p>
 
             <form id="shelter-form" onsubmit="handleShelterReg(event)">
-                <div class="form-group">
-                    <label>Organization Name</label>
-                    <input type="text" id="orgName" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Registration Number (if applicable)</label>
-                    <input type="text" id="regNum" class="form-control">
-                </div>
-
-                <div class="form-group">
-                    <label>Contact Person</label>
-                    <input type="text" id="contactPerson" class="form-control" required>
-                </div>
-
-                <div class="form-group">
-                    <label>Contact Email</label>
-                    <input type="email" id="contactEmail" class="form-control" required>
+                <h4 class="form-section-title">Organization Details</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Organization Name</label>
+                        <input type="text" id="orgName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Registration Number (if applicable)</label>
+                        <input type="text" id="regNum" class="form-control">
+                    </div>
                 </div>
 
                 <div class="form-group">
@@ -48,51 +40,72 @@
                     <textarea id="address" class="form-control" rows="2" required></textarea>
                 </div>
 
-                <div class="form-group">
+                <h4 class="form-section-title">Contact Information</h4>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Contact Person</label>
+                        <input type="text" id="contactPerson" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Contact Email</label>
+                        <input type="email" id="contactEmail" class="form-control" required>
+                    </div>
+                </div>
+
+                <h4 class="form-section-title">Capacity &amp; Services</h4>
+                <div class="form-group" style="max-width: 50%;">
                     <label>Capacity</label>
-                    <input type="number" id="capacity" class="form-control" placeholder="Max number of animals"
-                        required>
+                    <input type="number" id="capacity" class="form-control" placeholder="Max number of animals" required>
                 </div>
 
                 <div class="form-group">
                     <label>Services Offered</label>
-                    <div id="services-checklist" style="display: flex; flex-direction: column; gap: 8px;">
-                        <label style="font-weight: normal;"><input type="checkbox" value="Medical Treatment"> Medical
-                            Treatment / Vet
-                            On-site</label>
-                        <label style="font-weight: normal;"><input type="checkbox" value="Long-term Shelter"> Long-term
-                            Shelter</label>
-                        <label style="font-weight: normal;"><input type="checkbox" value="Adoption Center"> Adoption
-                            Center</label>
-                        <label style="font-weight: normal;"><input type="checkbox" value="Spay/Neuter Program">
-                            Spay/Neuter Program</label>
-                        <label style="font-weight: normal;"><input type="checkbox" value="Ambulance Service"> Ambulance
-                            Service</label>
+                    <div id="services-checklist" class="services-grid">
+                        <label class="service-pill">
+                            <input type="checkbox" value="Medical Treatment">
+                            <span><i class="fas fa-stethoscope"></i> Vet / Medical</span>
+                        </label>
+                        <label class="service-pill">
+                            <input type="checkbox" value="Long-term Shelter">
+                            <span><i class="fas fa-home"></i> Long-term Shelter</span>
+                        </label>
+                        <label class="service-pill">
+                            <input type="checkbox" value="Adoption Center">
+                            <span><i class="fas fa-heart"></i> Adoption Center</span>
+                        </label>
+                        <label class="service-pill">
+                            <input type="checkbox" value="Spay/Neuter Program">
+                            <span><i class="fas fa-cut"></i> Spay/Neuter</span>
+                        </label>
+                        <label class="service-pill">
+                            <input type="checkbox" value="Ambulance Service">
+                            <span><i class="fas fa-ambulance"></i> Ambulance</span>
+                        </label>
                     </div>
                 </div>
 
+                <h4 class="form-section-title">Verification</h4>
                 <div class="form-group">
                     <label>Upload Certification / Logo</label>
-                    <div class="upload-preview" onclick="document.getElementById('certification').click()">
+                    <div class="upload-preview" onclick="document.getElementById('certification').click()" style="height: 180px;">
                         <div id="preview-text" class="text-center">
-                            <i class="fas fa-camera fa-2x mb-1"></i>
-                            <p>Click to upload certification or logo</p>
+                            <i class="fas fa-file-upload fa-3x mb-1" style="color: #bbb;"></i>
+                            <p style="color: #666; margin-top: 10px;">Click to upload certification or logo</p>
                         </div>
-                        <img id="image-preview" src="" style="display: none;">
+                        <img id="image-preview" src="" style="display: none; width: 100%; height: 100%; object-fit: contain; padding: 10px;">
                     </div>
                     <input type="file" id="certification" class="form-control" accept="image/*,application/pdf"
                         style="display: none;" onchange="previewImage(this)">
                 </div>
 
-                <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%;">Submit
-                    Application</button>
+                <button type="submit" id="submit-btn" class="btn btn-primary" style="width: 100%; font-size: 1.1rem; padding: 15px; margin-top: 10px;">Submit Application</button>
             </form>
         </div>
     </div>
 
     <script src="js/script.js"></script>
     <script>
-        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+        const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
 
         function previewImage(input) {
             if (input.files && input.files[0]) {

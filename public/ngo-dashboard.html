@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NGO Dashboard - StraySouls</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .dashboard-header {
+            background: #f8f9fa;
+            padding: 2.5rem 0;
+            border-bottom: 2px solid var(--primary-color);
+            margin-bottom: 2rem;
+            background-image: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        }
+
+        .user-welcome {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .tab-nav {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            margin-bottom: 30px;
+            gap: 10px;
+        }
+
+        .tab-btn {
+            padding: 12px 25px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: #7f8c8d;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-btn.active {
+            color: var(--primary-color);
+        }
+
+        .tab-btn.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            width: 100%;
+            height: 3px;
+            background: var(--primary-color);
+            border-radius: 3px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .ngo-card {
+            background: white;
+            padding: 1.5rem;
+            border-radius: 16px;
+            margin-bottom: 1.2rem;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid #f0f0f0;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .ngo-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.08);
+        }
+
+        .urgency-badge {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+        }
+
+        .urgency-high { background: #fee2e2; color: #ef4444; }
+        .urgency-medium { background: #fef3c7; color: #d97706; }
+        .urgency-low { background: #dcfce7; color: #10b981; }
+
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7); display: none; justify-content: center;
+            align-items: center; z-index: 1000; backdrop-filter: blur(8px);
+        }
+
+        .modal-content {
+            background: white; padding: 2.5rem; border-radius: 24px;
+            max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto;
+            position: relative; box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+        }
+
+        .close-modal {
+            position: absolute; top: 1.5rem; right: 1.5rem; font-size: 1.8rem;
+            cursor: pointer; color: #adb5bd; transition: color 0.2s;
+        }
+
+        .close-modal:hover { color: #212529; }
+
+        .detail-image {
+            width: 100%; height: 300px; object-fit: cover; border-radius: 16px;
+            margin-bottom: 1.5rem; border: 1px solid #eee;
+        }
+    </style>
+</head>
+
+<body>
+
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="index.html" class="logo"><i class="fas fa-paw"></i> StraySouls</a>
+            <ul class="nav-links">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="reports-gallery.html">Active Reports</a></li>
+                <li><a href="#" onclick="logout()" class="text-danger">Logout</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="dashboard-header">
+        <div class="container user-welcome">
+            <div>
+                <h1 style="font-size: 2.2rem; color: #2d3436;">NGO Portal</h1>
+                <p style="color: #636e72; font-size: 1.1rem;">Welcome back, <span id="ngo-name" style="font-weight: 700; color: var(--primary-color);">Organization</span></p>
+            </div>
+            <div style="background: white; width: 70px; height: 70px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
+                <i class="fas fa-building fa-2x" style="color: var(--primary-color);"></i>
+            </div>
+        </div>
+    </div>
+
+    <div class="container" style="min-height: 60vh; padding-bottom: 4rem;">
+        
+        <div class="tab-nav">
+            <button class="tab-btn active" onclick="switchTab('available-tasks')"><i class="fas fa-list-ul mr-1"></i> Available NGO Tasks</button>
+            <button class="tab-btn" onclick="switchTab('my-tasks')"><i class="fas fa-tasks mr-1"></i> Our Active Missions</button>
+        </div>
+
+        <!-- Available Tasks -->
+        <div id="available-tasks" class="tab-content active">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem;">
+                <h3 style="margin: 0;">Escalated Reports (3+ Strays)</h3>
+                <span id="task-count" style="background: var(--primary-color); color: white; padding: 2px 12px; border-radius: 20px; font-size: 0.85rem;">0 available</span>
+            </div>
+            <div id="available-tasks-list">
+                <p class="text-center" style="padding: 3rem; color: #95a5a6;">Scanning for emergency tasks...</p>
+            </div>
+        </div>
+
+        <!-- My Tasks -->
+        <div id="my-tasks" class="tab-content">
+            <h3 class="mb-2">Assigned to your NGO</h3>
+            <div id="my-tasks-list">
+                <p class="text-center" style="padding: 3rem; color: #95a5a6;">No active missions currently.</p>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Task Details Modal -->
+    <div id="taskModal" class="modal-overlay">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeNGOModal()">&times;</span>
+            <div id="modal-content-area">
+                <!-- Content injected by JS -->
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container footer-bottom">
+            <p>&copy; <span id="current-year"></span> StraySouls NGO Partnership Program.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/taskCompletion.js"></script> 
+    <script>
+        const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
+        const socket = io(API_BASE);
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const user = JSON.parse(localStorage.getItem('straySoulsUser'));
+            if (!user || user.role !== 'ngo') {
+                window.location.href = 'login.html';
+                return;
+            }
+
+            document.getElementById('ngo-name').textContent = user.name;
+            
+            // Join NGO/Shelter Room
+            socket.emit('join_role_room', 'shelter'); // NGOs use the shelter room for tasks
+
+            // Listen for new shelter-routed tasks
+            socket.on('new_report_shelters', (data) => {
+                showToast(`🏢 Emergency NGO Task: ${data.message}`, 'success');
+                loadNGOAvailableTasks();
+            });
+            
+            socket.on('taskAccepted', () => { loadNGOAvailableTasks(); loadNGOMyTasks(); });
+            socket.on('taskStatusUpdated', () => loadNGOMyTasks());
+            
+            socket.on('taskVerified', (data) => {
+                showToast('Mission accomplished! Your proof was approved.', 'success');
+                loadNGOMyTasks();
+            });
+
+            loadNGOAvailableTasks();
+            loadNGOMyTasks();
+        });
+
+        async function loadNGOAvailableTasks() {
+            const token = localStorage.getItem('straySoulsToken');
+            const list = document.getElementById('available-tasks-list');
+            const countBadge = document.getElementById('task-count');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/live`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const allTasks = await res.json();
+                
+                if (!Array.isArray(allTasks)) {
+                    list.innerHTML = '<p class="text-center text-danger">Error loading tasks.</p>';
+                    return;
+                }
+
+                const openTasks = allTasks.filter(t => t.status === 'open');
+                countBadge.textContent = `${openTasks.length} available`;
+
+                if (openTasks.length === 0) {
+                    list.innerHTML = `
+                        <div style="text-align: center; padding: 4rem; background: #f8f9fa; border-radius: 16px; border: 2px dashed #dee2e6;">
+                            <i class="fas fa-check-circle fa-3x" style="color: #2ecc71; margin-bottom: 1rem;"></i>
+                            <h4>All Clear!</h4>
+                            <p style="color: #7f8c8d;">No escalated reports requiring NGO intervention at this moment.</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                list.innerHTML = openTasks.map(t => `
+                    <div class="ngo-card">
+                        <div style="flex: 1;">
+                            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                                <span class="urgency-badge urgency-${t.urgency}">${t.urgency} Urgency</span>
+                                <span style="color: #95a5a6; font-size: 0.85rem;"><i class="far fa-clock"></i> ${new Date(t.createdAt).toLocaleTimeString()}</span>
+                            </div>
+                            <h4 style="margin-bottom: 5px; color: #2d3436;">${t.title}</h4>
+                            <p style="color: #636e72; font-size: 0.95rem; margin-bottom: 10px;">${t.description}</p>
+                            <p style="font-size: 0.85rem; color: #2d3436; font-weight: 600;"><i class="fas fa-map-marker-alt" style="color: #e74c3c;"></i> ${t.location.address || 'Location provided'}</p>
+                        </div>
+                        <div style="margin-left: 20px;">
+                            <button class="btn btn-primary" onclick="acceptNGOTask('${t._id}')">Accept Mission</button>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-danger">Network error. Please refresh.</p>';
+            }
+        }
+
+        async function loadNGOMyTasks() {
+            const token = localStorage.getItem('straySoulsToken');
+            const list = document.getElementById('my-tasks-list');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/my`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tasks = await res.json();
+
+                if (tasks.length === 0) {
+                    list.innerHTML = '<p class="text-center" style="padding: 3rem;">You have no active missions.</p>';
+                    return;
+                }
+
+                list.innerHTML = tasks.map(t => {
+                    let statusColor = '#3498db';
+                    if (t.status === 'completed') statusColor = '#2ecc71';
+                    if (t.status === 'pending_verification') statusColor = '#f1c40f';
+                    
+                    return `
+                        <div class="ngo-card" style="border-left: 6px solid ${statusColor}">
+                            <div style="flex: 1;">
+                                <h4 style="margin-bottom: 5px;">${t.title}</h4>
+                                <p style="font-size: 0.85rem; color: #7f8c8d;">Status: <strong style="color: ${statusColor}">${t.status.replace('_', ' ').toUpperCase()}</strong></p>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <button class="btn btn-outline btn-sm" onclick="showNGOTaskDetails('${t._id}')">Details</button>
+                                ${t.status === 'accepted' ? `<button class="btn btn-primary btn-sm" onclick="updateNGOStatus('${t._id}', 'in_progress')">Start Mission</button>` : ''}
+                                ${t.status === 'in_progress' ? `<button class="btn btn-success btn-sm" onclick="openNGOCompletionModal('${t._id}')">Mark Completed</button>` : ''}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            } catch (err) {
+                list.innerHTML = '<p class="text-center text-danger">Error loading your tasks.</p>';
+            }
+        }
+
+        async function acceptNGOTask(taskId) {
+            const token = localStorage.getItem('straySoulsToken');
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/accept`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    showToast('Mission accepted! Stay safe.', 'success');
+                    loadNGOAvailableTasks();
+                    loadNGOMyTasks();
+                    switchTab('my-tasks');
+                } else {
+                    const data = await res.json();
+                    showToast(data.message || 'Could not accept task', 'error');
+                }
+            } catch (err) {
+                showToast('Network error', 'error');
+            }
+        }
+
+        async function updateNGOStatus(taskId, status) {
+            const token = localStorage.getItem('straySoulsToken');
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/status`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status })
+                });
+                if (res.ok) {
+                    showToast(`Status updated to ${status.replace('_', ' ')}`);
+                    loadNGOMyTasks();
+                }
+            } catch (err) {
+                showToast('Error updating status', 'error');
+            }
+        }
+
+        function openNGOCompletionModal(taskId) {
+            // Reusing the same logic from taskCompletion.js if available
+            // If not, I can implement a quick version here or ensure taskCompletion.js works for NGOs
+            if (typeof openCompletionModal === 'function') {
+                openCompletionModal(taskId);
+            } else {
+                showToast('Completion system loading...', 'info');
+            }
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            event.currentTarget.classList.add('active');
+        }
+
+        function closeNGOModal() {
+            document.getElementById('taskModal').style.display = 'none';
+        }
+
+        async function showNGOTaskDetails(taskId) {
+            const token = localStorage.getItem('straySoulsToken');
+            const modal = document.getElementById('taskModal');
+            const content = document.getElementById('modal-content-area');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/my`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tasks = await res.json();
+                const task = tasks.find(t => t._id === taskId);
+
+                if (!task) return;
+
+                let reportInfo = task.reportId || {};
+                let imageUrl = reportInfo.image || 'https://placehold.co/600x400?text=No+Image';
+                if (imageUrl && !imageUrl.startsWith('http')) imageUrl = `${API_BASE}/${imageUrl}`;
+
+                content.innerHTML = `
+                    <img src="${imageUrl}" alt="Task Animal" class="detail-image">
+                    <h2>${task.title}</h2>
+                    <p style="margin-bottom: 20px; font-size: 1.1rem; color: #636e72;">${task.description}</p>
+                    
+                    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 12px; margin-bottom: 20px;">
+                        <p><strong><i class="fas fa-map-marked-alt"></i> Location:</strong> ${task.location.address || 'See Map'}</p>
+                        <p><strong><i class="fas fa-exclamation-triangle"></i> Urgency:</strong> ${task.urgency.toUpperCase()}</p>
+                        <p><strong><i class="fas fa-calendar-alt"></i> Created:</strong> ${new Date(task.createdAt).toLocaleString()}</p>
+                    </div>
+
+                    <div style="display: flex; gap: 15px;">
+                        <a href="https://www.google.com/maps?q=${task.location.lat},${task.location.lng}" target="_blank" class="btn btn-outline" style="flex: 1; text-align: center;"><i class="fas fa-directions"></i> Get Directions</a>
+                        <button onclick="closeNGOModal()" class="btn btn-secondary">Close</button>
+                    </div>
+                `;
+
+                modal.style.display = 'flex';
+
+            } catch (e) {
+                showToast('Error loading details', 'error');
+            }
+        }
+    </script>
+</body>
+
+</html>

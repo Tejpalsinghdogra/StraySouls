@@ -1,4 +1,5 @@
 const User = require('../models/User');
+const Shelter = require('../models/Shelter');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
@@ -62,5 +63,58 @@ exports.login = async (req, res) => {
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Server error' });
+    }
+};
+
+exports.createNGO = async (req, res) => {
+    try {
+        // Strict Admin Check
+        if (req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Access denied: Admin only' });
+        }
+
+        const { name, email, password, organizationName, address, contactPerson, capacity } = req.body;
+
+        // Check if user already exists
+        const existingUser = await User.findOne({ email });
+        if (existingUser) {
+            return res.status(400).json({ error: 'User with this email already exists' });
+        }
+
+        // Hash password
+        const salt = await bcrypt.genSalt(10);
+        const hashedPassword = await bcrypt.hash(password, salt);
+
+        // Create new user with 'ngo' role
+        const newUser = new User({
+            name,
+            email,
+            password: hashedPassword,
+            role: 'ngo'
+        });
+
+        await newUser.save();
+
+        // Create the Shelter/NGO profile
+        const newShelter = new Shelter({
+            organizationName,
+            contactPerson: contactPerson || name,
+            contactEmail: email,
+            address: address || 'N/A',
+            capacity: capacity || 10,
+            status: 'approved',
+            userId: newUser._id
+        });
+
+        await newShelter.save();
+
+        res.status(201).json({ 
+            success: true, 
+            message: 'NGO created successfully',
+            user: { id: newUser._id, name: newUser.name, email: newUser.email, role: newUser.role }
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Server error creating NGO' });
     }
 };

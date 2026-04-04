@@ -98,7 +98,7 @@
     <script id="socket-script"></script>
 
     <script>
-        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+        const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
         document.getElementById('socket-script').src = `${API_BASE}/socket.io/socket.io.js`;
 
         // Initialize Map

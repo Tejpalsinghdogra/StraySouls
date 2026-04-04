@@ -229,6 +229,7 @@
                 </a></li>
                 <li><a href="admin-shelters.html"><i class="fas fa-home"></i> Shelters</a></li>
                 <li><a href="admin-volunteers.html"><i class="fas fa-users"></i> Volunteers</a></li>
+                <li><a href="#" onclick="switchAdminSection('ngos', this)"><i class="fas fa-building"></i> Appoint NGO</a></li>
                 <li><a href="index.html" onclick="logout()" style="margin-top: 2rem; color: #e74c3c;"><i
                             class="fas fa-sign-out-alt"></i>
                         Logout</a></li>
@@ -276,6 +277,14 @@
                 <!-- Reports Section -->
                 <div id="section-reports" class="admin-section" style="display: none;">
                     <h1 class="mb-2">All Reports</h1>
+                    <div style="margin-bottom: 1rem;">
+                        <label for="routedToFilter"><strong>Filter by Routing:</strong></label>
+                        <select id="routedToFilter" onchange="loadReports()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; margin-left: 10px;">
+                            <option value="">All Reports</option>
+                            <option value="volunteers">🙋 Volunteer Reports</option>
+                            <option value="shelters">🏢 NGO/Shelter Reports</option>
+                        </select>
+                    </div>
                     <div class="table-container" id="reports-section-content">
                         <!-- Reports table will be cloned here -->
                     </div>
@@ -375,6 +384,60 @@
                 </div>
 
             </div>
+
+            <!-- NGO Management Section -->
+            <div id="section-ngos" class="admin-section" style="display: none;">
+                <h1 class="mb-2">NGO Partnership Management</h1>
+                <p class="mb-2">NGOs are specialized partners appointed by the Admin. They handle reports with large numbers of strays.</p>
+                
+                <div class="stats-cards mb-2" style="grid-template-columns: 1fr 2fr; gap: 2rem;">
+                    <!-- Create NGO Card -->
+                    <div class="stat-card" style="flex-direction: column; align-items: stretch; height: auto;">
+                        <h3 class="mb-1"><i class="fas fa-plus-circle"></i> Appoint New NGO</h3>
+                        <form id="create-ngo-form" onsubmit="handleCreateNGO(event)">
+                            <div class="form-group mb-1">
+                                <label style="font-size: 0.8rem;">Organization Name</label>
+                                <input type="text" id="ngo-org-name" class="form-control" required placeholder="e.g. Happy Paws NGO">
+                            </div>
+                            <div class="form-group mb-1">
+                                <label style="font-size: 0.8rem;">Officer Name</label>
+                                <input type="text" id="ngo-name" class="form-control" required placeholder="e.g. John Doe">
+                            </div>
+                            <div class="form-group mb-1">
+                                <label style="font-size: 0.8rem;">Email (Login)</label>
+                                <input type="email" id="ngo-email" class="form-control" required placeholder="ngo@example.com">
+                            </div>
+                            <div class="form-group mb-1">
+                                <label style="font-size: 0.8rem;">Password</label>
+                                <input type="password" id="ngo-password" class="form-control" required placeholder="********">
+                            </div>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;" id="ngo-submit-btn">Authorize & Create Account</button>
+                        </form>
+                    </div>
+
+                    <!-- NGO List -->
+                    <div class="stat-card" style="flex-direction: column; align-items: stretch; height: auto;">
+                        <h3 class="mb-1"><i class="fas fa-list"></i> Active NGO Partners</h3>
+                        <div class="table-container" style="box-shadow: none; padding: 0;">
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th>Organization</th>
+                                        <th>Contact</th>
+                                        <th>Email</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="ngos-table-body">
+                                    <tr>
+                                        <td colspan="4" class="text-center">Loading NGOs...</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>    <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
         <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
         <img class="lightbox-content" id="lightbox-img">
@@ -384,10 +447,13 @@
     <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="js/script.js"></script>
     <script>
-        const API_BASE = (window.location.port === '5500' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+        const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
         const socket = io(API_BASE);
 
         let reportsData = []; document.addEventListener('DOMContentLoaded', () => {
+                // Join all rooms as admin
+                socket.emit('join_role_room', 'admin');
+                
                 loadStats();
                 loadReports();
                 loadShelters();
@@ -397,6 +463,16 @@
 
                 // Socket.io Events
                 socket.on('newTaskBroadcast', () => loadLiveTasks());
+                socket.on('new_report_volunteers', (data) => {
+                    showToast(`🐾 New Volunteer Report: ${data.message}`, 'success');
+                    loadReports();
+                    loadStats();
+                });
+                socket.on('new_report_shelters', (data) => {
+                    showToast(`🏢 New Escalated Report: ${data.message}`, 'success');
+                    loadReports();
+                    loadStats();
+                });
                 socket.on('taskAccepted', () => loadLiveTasks());
                 socket.on('taskStatusUpdated', () => loadLiveTasks());
                 socket.on('noVolunteersAvailable', () => {
@@ -563,23 +639,28 @@
                 }
             }
 
-            function switchSection(sectionId, element) {
+            function switchAdminSection(sectionId, element) {
                 document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
                 const section = document.getElementById(`section-${sectionId}`);
                 if (section) section.style.display = 'block';
 
                 document.querySelectorAll('.sidebar ul li a').forEach(a => a.classList.remove('active'));
-                element.classList.add('active');
+                if (element) element.classList.add('active');
 
                 if (sectionId === 'reports') {
-                    const dashboardTable = document.getElementById('reports-table-body').closest('table').cloneNode(true);
+                    const reportsTable = document.getElementById('reports-table-body')?.closest('table')?.cloneNode(true);
                     const reportsContent = document.getElementById('reports-section-content');
-                    if (reportsContent) {
+                    if (reportsContent && reportsTable) {
                         reportsContent.innerHTML = '';
-                        reportsContent.appendChild(dashboardTable);
+                        reportsContent.appendChild(reportsTable);
                     }
+                } else if (sectionId === 'ngos') {
+                    loadNGOs();
                 }
             }
+
+            // Alias for existing usages
+            const switchSection = switchAdminSection;
 
             async function loadStats() {
                 try {
@@ -603,38 +684,45 @@
 
             async function loadReports() {
                 try {
-                    const res = await fetch(`${API_BASE}/api/reports`);
+                    const filter = document.getElementById('routedToFilter')?.value || '';
+                    const url = filter ? `${API_BASE}/api/reports?routedTo=${filter}` : `${API_BASE}/api/reports`;
+                    const res = await fetch(url);
                     const reports = await res.json();
                     const tbody = document.getElementById('reports-table-body');
 
                     if (!reports || reports.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="5" style="text-align: center;">No reports found</td></tr>';
+                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No reports found</td></tr>';
                         return;
                     }
 
-                    tbody.innerHTML = reports.slice(0, 6).map(r => `
-                    <tr>
-                        <td>${r.animalType.toUpperCase()}</td>
-                        <td>${r.location.address || 'N/A'}</td>
-                        <td>${new Date(r.createdAt).toLocaleDateString()}</td>
-                        <td>
-                            <span style="
-                                padding: 4px 10px;
-                                border-radius: 20px;
-                                font-size: 0.78rem;
-                                font-weight: 600;
-                                background: ${r.status === 'pending' ? '#fff3e0' : r.status === 'resolved' ? '#e8f5e9' : r.status === 'critical' ? '#ffebee' : '#e3f2fd'};
-                                color: ${r.status === 'pending' ? '#ef6c00' : r.status === 'resolved' ? '#2e7d32' : r.status === 'critical' ? '#c62828' : '#1565c0'};
-                            ">${r.status.toUpperCase()}</span>
-                        </td>
-                        </td>
-                    </tr>
-                `).join('');
+                    tbody.innerHTML = reports.slice(0, 6).map(r => {
+                        const routingBadge = r.routedTo === 'volunteers'
+                            ? '<span style="padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; background: #dbeafe; color: #2563eb;">🙋 Volunteers</span>'
+                            : '<span style="padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; background: #fef3c7; color: #d97706;">🏢 NGO/Shelter</span>';
+                        return `
+                        <tr>
+                            <td>${r.animalType.toUpperCase()}</td>
+                            <td>${r.location.address || 'N/A'}</td>
+                            <td>${r.numberOfStrays || 1} strays</td>
+                            <td>${new Date(r.createdAt).toLocaleDateString()}</td>
+                            <td>
+                                <span style="
+                                    padding: 4px 10px;
+                                    border-radius: 20px;
+                                    font-size: 0.78rem;
+                                    font-weight: 600;
+                                    background: ${r.status === 'pending' ? '#fff3e0' : r.status === 'resolved' ? '#e8f5e9' : r.status === 'critical' ? '#ffebee' : '#e3f2fd'};
+                                    color: ${r.status === 'pending' ? '#ef6c00' : r.status === 'resolved' ? '#2e7d32' : r.status === 'critical' ? '#c62828' : '#1565c0'};
+                                ">${r.status.toUpperCase()}</span>
+                            </td>
+                            <td>${routingBadge}</td>
+                        </tr>
+                    `}).join('');
                 } catch (err) {
                     console.error('Error loading reports:', err);
                     const reportsTableBody = document.getElementById('reports-table-body');
                     if(reportsTableBody) {
-                        reportsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Error loading reports</td></tr>';
+                        reportsTableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Error loading reports</td></tr>';
                     }
                 }
             }
@@ -716,6 +804,79 @@
 
                 } catch (err) {
                     console.error('Error loading live tasks:', err);
+                }
+            }
+
+            async function loadNGOs() {
+                const token = localStorage.getItem('straySoulsToken');
+                const tbody = document.getElementById('ngos-table-body');
+                try {
+                    const res = await fetch(`${API_BASE}/api/shelters`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const shelters = await res.json();
+                    
+                    // Filter for NGOs (if we use role in future or just show all for now)
+                    // For now, all shelters are effectively NGOs in the system
+                    if (!shelters || shelters.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No NGOs appointed yet</td></tr>';
+                        return;
+                    }
+                    
+                    tbody.innerHTML = shelters.map(s => `
+                        <tr>
+                            <td><strong>${s.organizationName}</strong></td>
+                            <td>${s.contactPerson}</td>
+                            <td>${s.contactEmail}</td>
+                            <td>
+                                <button class="btn btn-outline btn-sm" onclick="showToast('Management features coming soon')">Manage</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } catch (err) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading NGO list</td></tr>';
+                }
+            }
+
+            async function handleCreateNGO(e) {
+                e.preventDefault();
+                const token = localStorage.getItem('straySoulsToken');
+                const submitBtn = document.getElementById('ngo-submit-btn');
+                const originalText = submitBtn.innerText;
+
+                const payload = {
+                    organizationName: document.getElementById('ngo-org-name').value,
+                    name: document.getElementById('ngo-name').value,
+                    email: document.getElementById('ngo-email').value,
+                    password: document.getElementById('ngo-password').value
+                };
+
+                submitBtn.disabled = true;
+                submitBtn.innerText = 'Appointing NGO...';
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/auth/create-ngo`, {
+                        method: 'POST',
+                        headers: { 
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    const data = await res.json();
+                    if (res.ok) {
+                        showToast('NGO Successfully appointed!', 'success');
+                        document.getElementById('create-ngo-form').reset();
+                        loadNGOs();
+                    } else {
+                        showToast(data.error || 'Failed to appoint NGO', 'error');
+                    }
+                } catch (err) {
+                    showToast('Network error', 'error');
+                } finally {
+                    submitBtn.disabled = false;
+                    submitBtn.innerText = originalText;
                 }
             }
         </script>

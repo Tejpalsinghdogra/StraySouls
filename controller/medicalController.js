@@ -21,17 +21,36 @@ exports.createMedicalRequest = async (req, res) => {
             const userType = animalType ? animalType.toLowerCase() : 'other';
             const aiType = aiResult.animalType ? aiResult.animalType.toLowerCase() : 'other';
             
-            // If user selected a specific type, check against AI. 
-            // We are more lenient here but still want to catch gross misclassifications.
-            if (userType !== 'other' && userType !== 'cattle' && userType !== aiType) {
-                 console.warn(`[Medical] Type mismatch warn: user=${userType}, ai=${aiType}`);
+            // Allow submission if AI says 'other' but user picked a specific type (like 'cattle')
+            // Only block if there is a flat-out contradiction (e.g. user says 'cattle', AI says 'dog')
+            if (userType !== 'other' && aiType !== 'other' && userType !== aiType) {
+                 console.log(`[Medical] Mismatch! User selected: ${userType}, AI saw: ${aiType}. Cleaning up Cloudinary...`);
+                 if (req.file.filename) {
+                     await cloudinary.uploader.destroy(req.file.filename);
+                 }
+                 return res.status(400).json({
+                     success: false,
+                     error: `Validation Failed: You selected "${userType}", but the image appears to contain a "${aiType}". Please select the correct animal type.`
+                 });
             }
             console.log('[Medical] AI verification passed ✓');
         }
 
         const finalUrgency = (aiResult && aiResult.urgencyLevel) || (isEmergency === 'true' ? 'high' : 'low');
-        const finalDescription = description || (aiResult && aiResult.aiDescription) || '';
-
+        
+        // --- Smart Description Merging ---
+        const userDesc = (description || "").trim();
+        const aiDesc = (aiResult && aiResult.aiDescription) || "";
+        let finalDescription = userDesc;
+ 
+        if (!userDesc) {
+            finalDescription = aiDesc;
+        } else if (aiDesc) {
+            // Ensure the detailed AI description is appended and stored in MongoDB so it gets used everywhere
+            finalDescription = `${userDesc}\n\nAI Detailed Analysis: ${aiDesc}`;
+        }
+        // --- End Description Merging ---
+ 
         const newRequest = new MedicalRequest({
             image: req.file.path,
             location: {

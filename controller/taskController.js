@@ -4,12 +4,24 @@ const Volunteer = require('../models/Volunteer');
 // Create a task manually
 exports.createTask = async (req, res) => {
     try {
-        const { title, description, location, urgency, reportId, assignedTo } = req.body;
+        const { title, description, location, urgency, reportId, assignedTo, routedTo } = req.body;
+        
+        // Determine routedTo - from request body, or by looking up the report
+        let taskRoutedTo = routedTo;
+        if (!taskRoutedTo && reportId) {
+            const report = await Report.findById(reportId);
+            if (report) {
+                taskRoutedTo = report.routedTo || 'volunteers';
+            }
+        }
+        taskRoutedTo = taskRoutedTo || 'volunteers';
         
         const newTask = new Task({
-            title, description, location, urgency, reportId, assignedTo: assignedTo || null,
+            title, description, location, urgency, reportId, 
+            assignedTo: assignedTo || null,
             status: assignedTo ? 'accepted' : 'open',
-            autoAssigned: false
+            autoAssigned: false,
+            routedTo: taskRoutedTo
         });
         await newTask.save();
         
@@ -26,10 +38,16 @@ exports.createTask = async (req, res) => {
         }
         
         if (req.io && !assignedTo) {
-            // Broadcast if open
-            req.io.emit('newTaskBroadcast', { 
-                taskId: newTask._id, reportId, location, description, urgency, animalType: 'Animal', broadcastedAt: new Date()
-            });
+            // Broadcast to appropriate room based on routing
+            if (taskRoutedTo === 'volunteers') {
+                req.io.to('volunteers_room').emit('newTaskBroadcast', { 
+                    taskId: newTask._id, reportId, location, description, urgency, animalType: 'Animal', broadcastedAt: new Date(), routedTo: taskRoutedTo
+                });
+            } else {
+                req.io.to('shelters_room').emit('new_report_shelters', { 
+                    taskId: newTask._id, reportId, location, description, urgency, animalType: 'Animal', message: 'New shelter task created', routedTo: taskRoutedTo
+                });
+            }
         }
         
         res.status(201).json(newTask);
@@ -41,7 +59,18 @@ exports.createTask = async (req, res) => {
 // Get live tasks (non-completed)
 exports.getLiveTasks = async (req, res) => {
     try {
-        const tasks = await Task.find({ status: { $ne: 'completed' } })
+        const query = { status: { $ne: 'completed' } };
+        
+        // Scope by role if user is authenticated
+        if (req.user && req.routeScope) {
+            query.routedTo = req.routeScope;
+        } else if (req.user && req.user.role === 'volunteer') {
+            query.routedTo = 'volunteers';
+        } else if (req.user && (req.user.role === 'shelter' || req.user.role === 'ngo')) {
+            query.routedTo = 'shelters';
+        }
+        
+        const tasks = await Task.find(query)
             .populate('assignedTo')
             .populate('reportId')
             .sort({ broadcastedAt: -1, createdAt: -1 });
@@ -57,11 +86,29 @@ exports.acceptTask = async (req, res) => {
         const { taskId } = req.params;
         const userId = req.user.id;
 
+        // Find the task first to check routedTo
+        const task = await Task.findById(taskId);
+        if (!task) {
+            return res.status(404).json({ message: 'Task not found' });
+        }
+
+        // Security check: volunteers can only accept volunteer tasks, shelters/NGOs can only accept shelter tasks
+        if (req.user.role === 'volunteer' && task.routedTo !== 'volunteers') {
+            return res.status(403).json({ message: 'This task is routed to NGOs/Shelters only' });
+        }
+        if ((req.user.role === 'shelter' || req.user.role === 'ngo') && task.routedTo !== 'shelters') {
+            return res.status(403).json({ message: 'This task is routed to Volunteers only' });
+        }
+
+        const isOrganization = req.user.role === 'shelter' || req.user.role === 'ngo';
+        const assignedToModel = isOrganization ? 'Shelter' : 'User';
+
         const updatedTask = await Task.findOneAndUpdate(
             { _id: taskId, assignedTo: null, status: 'open' },
             { 
                 $set: { 
                     assignedTo: userId, 
+                    assignedToModel: assignedToModel,
                     status: 'accepted',
                     assignedAt: new Date()
                 } 
@@ -73,20 +120,37 @@ exports.acceptTask = async (req, res) => {
             return res.status(409).json({ message: 'Task already accepted by another volunteer or not available' });
         }
 
-        const volunteer = await Volunteer.findOne({ userId });
-        if (volunteer) {
-            volunteer.assignedTasks.push(updatedTask._id);
-            await volunteer.save();
-        }
+        if (isOrganization) {
+            const shelter = await Shelter.findOne({ userId });
+            if (shelter) {
+                shelter.assignedTasks.push(updatedTask._id);
+                await shelter.save();
+            }
 
-        // Emit real-time update
-        if (req.io) {
-            req.io.emit('taskAccepted', { 
-                taskId: updatedTask._id, 
-                volunteerId: userId,
-                volunteerName: volunteer ? volunteer.name : 'A Volunteer',
-                reportId: updatedTask.reportId
-            });
+            if (req.io) {
+                req.io.to('shelters_room').emit('taskAccepted', { 
+                    taskId: updatedTask._id, 
+                    shelterId: userId,
+                    shelterName: shelter ? shelter.organizationName : 'An NGO',
+                    reportId: updatedTask.reportId
+                });
+            }
+        } else {
+            const volunteer = await Volunteer.findOne({ userId });
+            if (volunteer) {
+                volunteer.assignedTasks.push(updatedTask._id);
+                await volunteer.save();
+            }
+
+            // Emit real-time update
+            if (req.io) {
+                req.io.to('volunteers_room').emit('taskAccepted', { 
+                    taskId: updatedTask._id, 
+                    volunteerId: userId,
+                    volunteerName: volunteer ? volunteer.name : 'A Volunteer',
+                    reportId: updatedTask.reportId
+                });
+            }
         }
 
         res.json({ msg: 'Task accepted successfully', task: updatedTask });
@@ -99,7 +163,19 @@ exports.acceptTask = async (req, res) => {
 exports.getMyTasks = async (req, res) => {
     try {
         const userId = req.user.id;
-        const tasks = await Task.find({ assignedTo: userId }).sort({ assignedAt: -1, createdAt: -1 });
+        const assignedToModel = req.user.role === 'shelter' ? 'Shelter' : 'User';
+        const query = { assignedTo: userId, assignedToModel };
+        
+        // Filter by routedTo for non-admin users
+        if (req.user.role === 'volunteer') {
+            query.routedTo = 'volunteers';
+        } else if (req.user.role === 'shelter' || req.user.role === 'ngo') {
+            query.routedTo = 'shelters';
+        }
+        
+        const tasks = await Task.find(query)
+            .populate('reportId')
+            .sort({ assignedAt: -1, createdAt: -1 });
         res.json(tasks);
     } catch (err) {
         res.status(500).json({ error: err.message });
@@ -166,13 +242,23 @@ exports.submitTaskProof = async (req, res) => {
         
         await task.save();
 
-        const volunteer = await Volunteer.findOne({ userId: req.user.id });
+        let submitterName = 'Unknown';
+        let submitterType = task.assignedToModel === 'Shelter' ? 'shelter' : 'volunteer';
+        
+        if (task.assignedToModel === 'Shelter') {
+            const shelter = await Shelter.findOne({ userId: req.user.id });
+            if (shelter) submitterName = shelter.organizationName;
+        } else {
+            const volunteer = await Volunteer.findOne({ userId: req.user.id });
+            if (volunteer) submitterName = volunteer.name;
+        }
 
         if (req.io) {
             req.io.emit('proofSubmitted', {
                 taskId: task._id,
                 reportId: task.reportId,
-                volunteerName: volunteer ? volunteer.name : 'Unknown Volunteer',
+                submittedByName: submitterName,
+                submittedByType: submitterType,
                 proofImageUrl: task.completionProof.imageUrl,
                 note: task.completionProof.note,
                 submittedAt: task.completionProof.submittedAt
@@ -202,11 +288,20 @@ exports.verifyTask = async (req, res) => {
             return res.status(400).json({ error: 'Rejection reason is required' });
         }
 
-        let volunteerId = task.assignedTo;
+        let assigneeId = task.assignedTo;
         let eventName = '';
-        let eventPayload = { taskId: task._id, reportId: task.reportId, volunteerId };
-
-        const volunteerDocument = await Volunteer.findOne({ userId: volunteerId });
+        let eventPayload = { taskId: task._id, reportId: task.reportId };
+        
+        const isShelterTask = task.assignedToModel === 'Shelter';
+        let assigneeDocument = null;
+        
+        if (isShelterTask) {
+            assigneeDocument = await Shelter.findOne({ userId: assigneeId });
+            eventPayload.shelterId = assigneeId;
+        } else {
+            assigneeDocument = await Volunteer.findOne({ userId: assigneeId });
+            eventPayload.volunteerId = assigneeId;
+        }
 
         if (action === 'verify') {
             task.status = 'completed';
@@ -214,14 +309,14 @@ exports.verifyTask = async (req, res) => {
             task.verification.reviewedBy = req.user.id;
             task.verification.reviewedAt = Date.now();
             
-            if (volunteerDocument) {
-                volunteerDocument.isAvailable = true;
-                volunteerDocument.notifications.push({
+            if (assigneeDocument) {
+                assigneeDocument.isAvailable = true;
+                assigneeDocument.notifications.push({
                     message: "Your task completion proof was approved!",
                     taskId: task._id,
                     type: 'verified'
                 });
-                await volunteerDocument.save();
+                await assigneeDocument.save();
             }
 
             // AUTO-MARK REPORT AS RESOLVED
@@ -229,7 +324,7 @@ exports.verifyTask = async (req, res) => {
                 const updatedReport = await Report.findByIdAndUpdate(task.reportId, {
                     status: 'resolved',
                     resolvedAt: Date.now(),
-                    resolvedBy: volunteerDocument ? volunteerDocument._id : null
+                    resolvedBy: !isShelterTask && assigneeDocument ? assigneeDocument._id : null
                 }, { new: true });
 
                 if (req.io && updatedReport) {
@@ -237,7 +332,7 @@ exports.verifyTask = async (req, res) => {
                         reportId: updatedReport._id,
                         taskId: task._id,
                         resolvedAt: updatedReport.resolvedAt,
-                        volunteerName: volunteerDocument ? volunteerDocument.name : 'System',
+                        volunteerName: assigneeDocument ? (isShelterTask ? assigneeDocument.organizationName : assigneeDocument.name) : 'System',
                         animalType: updatedReport.animalType,
                         urgency: updatedReport.urgency
                     });
@@ -257,13 +352,13 @@ exports.verifyTask = async (req, res) => {
             // clear proof
             task.completionProof = { imageUrl: '', cloudinaryPublicId: '', note: '', submittedAt: null };
 
-            if (volunteerDocument) {
-                volunteerDocument.notifications.push({
+            if (assigneeDocument) {
+                assigneeDocument.notifications.push({
                     message: `Your proof was rejected: ${rejectionReason}`,
                     taskId: task._id,
                     type: 'rejected'
                 });
-                await volunteerDocument.save();
+                await assigneeDocument.save();
             }
 
             eventName = 'taskRejected';
@@ -275,7 +370,14 @@ exports.verifyTask = async (req, res) => {
         await task.save();
 
         if (req.io) {
-            req.io.emit(eventName, eventPayload);
+            const targetRoom = isShelterTask ? 'shelters_room' : 'volunteers_room';
+            req.io.to(targetRoom).emit(eventName, eventPayload);
+            if (req.user.role === 'admin') {
+                // Ensure admins get the update to auto-remove card
+                req.io.to('admin_room').emit(eventName, eventPayload);
+            } else {
+                req.io.emit(eventName, eventPayload);
+            }
         }
 
         res.json({ msg: `Task successfully ${action}ed`, task });
@@ -288,7 +390,7 @@ exports.verifyTask = async (req, res) => {
 exports.getPendingVerification = async (req, res) => {
     try {
         const tasks = await Task.find({ status: 'pending_verification' })
-            .populate({ path: 'assignedTo', select: 'name email' })
+            .populate({ path: 'assignedTo', select: 'name email organizationName contactEmail' })
             .populate({ path: 'reportId', select: 'animalType urgency location image' })
             .sort({ 'completionProof.submittedAt': 1 }); // Oldest first
             

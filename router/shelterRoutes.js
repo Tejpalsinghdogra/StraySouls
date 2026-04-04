@@ -17,4 +17,8 @@ router.get('/', auth, shelterController.getAllShelters);
 // @desc    Update shelter status
 router.put('/:id/status', auth, shelterController.updateShelterStatus);
 
+// @route   GET api/shelters/notifications
+// @desc    Get shelter notifications
+router.get('/notifications', auth, shelterController.getShelterNotifications);
+
 module.exports = router;

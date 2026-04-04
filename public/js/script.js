@@ -34,13 +34,19 @@ function checkAuth() {
         const isAdminPage = currentPath.includes('admin.html') || 
                     currentPath.includes('admin-reports.html') ||
                     currentPath.includes('admin-shelters.html') ||
-                    currentPath.includes('admin-volunteers.html');
-        if (isAdminPage && user.role !== 'admin') {
+                    currentPath.includes('admin-volunteers.html') ||
+                    currentPath.includes('shelter-dashboard.html');
+        
+        if (isAdminPage && user.role === 'volunteer') {
             window.location.href = 'dashboard.html';
+        } else if (isAdminPage && (user.role === 'shelter' || user.role === 'ngo')) {
+            window.location.href = user.role === 'ngo' ? 'ngo-dashboard.html' : 'shelter-dashboard.html';
         } else if (currentPath.includes('dashboard.html') && user.role === 'admin') {
             window.location.href = 'admin.html';
+        } else if (currentPath.includes('dashboard.html') && (user.role === 'shelter' || user.role === 'ngo')) {
+            window.location.href = user.role === 'ngo' ? 'ngo-dashboard.html' : 'shelter-dashboard.html';
         }
-    } else if (currentPath.includes('admin.html') || currentPath.includes('admin-reports.html') || currentPath.includes('dashboard.html')) {
+    } else if (currentPath.includes('admin.html') || currentPath.includes('admin-reports.html') || currentPath.includes('dashboard.html') || currentPath.includes('shelter-dashboard.html') || currentPath.includes('ngo-dashboard.html')) {
         // Not logged in but trying to access a dashboard
         window.location.href = 'login.html';
     }
@@ -55,6 +61,9 @@ function checkAuth() {
                 dashboardLabel = 'Admin Panel';
             } else if (user.role === 'volunteer') {
                 dashboardLabel = 'Volunteer Portal';
+            } else if (user.role === 'shelter' || user.role === 'ngo') {
+                dashboardPage = user.role === 'ngo' ? 'ngo-dashboard.html' : 'shelter-dashboard.html';
+                dashboardLabel = user.role === 'ngo' ? '🏢 NGO Portal' : '🏢 Shelter Portal';
             }
             
             authLinks.innerHTML = `

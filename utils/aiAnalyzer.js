@@ -1,93 +1,170 @@
 const { GoogleGenAI } = require('@google/genai');
+const fs   = require('fs');
+const path = require('path');
 
 /**
- * Analyzes an image using Gemini 2.5 Flash vision to determine:
- * - Whether the image contains a real animal
- * - Whether the animal appears injured/in distress
- * - Estimated urgency level
- * - Animal type
- * - A short AI-generated description
+ * Analyzes an animal image using Gemini 2.5 Flash Vision.
  *
- * @param {string} imageUrl - Public Cloudinary URL of the uploaded image
- * @returns {Promise<{isAnimal: boolean, isInjured: boolean, urgencyLevel: string, animalType: string, aiDescription: string}>}
+ * CONFIRMED WORKING MODEL: gemini-2.5-flash
+ * SDK: @google/genai  (new unified SDK - NOT @google/generative-ai)
+ * Correct call pattern: ai.models.generateContent({ model, contents })
+ *
+ * Returns:
+ *  - isAnimal      : boolean
+ *  - isInjured     : boolean
+ *  - urgencyLevel  : 'low' | 'medium' | 'high'
+ *  - animalType    : 'dog' | 'cat' | 'bird' | 'cattle' | 'other'
+ *  - aiDescription : detailed string — stored in Report.description in MongoDB
  */
 exports.analyzeAnimalImage = async (imageUrl) => {
-    // Lazily instantiate so GEMINI_API_KEY is read after dotenv.config() runs
-    const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+    const WORKING_MODEL = 'gemini-2.5-flash';
 
     const fallback = {
-        isAnimal: true,
-        isInjured: false,
-        urgencyLevel: 'low',
-        animalType: 'other',
+        isAnimal:      true,
+        isInjured:     false,
+        urgencyLevel:  'low',
+        animalType:    'other',
         aiDescription: ''
     };
 
-    try {
-        console.log(`[AI Analyzer] Fetching image from: ${imageUrl}`);
+    if (!imageUrl) {
+        console.error('[AI Analyzer] No image URL provided.');
+        return fallback;
+    }
 
-        const response = await fetch(imageUrl);
-        if (!response.ok) {
-            throw new Error(`Failed to fetch image: ${response.statusText}`);
+    try {
+        // ── 1. Initialize Gemini client ───────────────────────────────────────
+        if (!process.env.GEMINI_API_KEY) {
+            throw new Error('GEMINI_API_KEY is not set in environment.');
+        }
+        const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+        // ── 2. Load image as base64 ───────────────────────────────────────────
+        let base64Data;
+        let mimeType = 'image/jpeg';
+
+        console.log(`[AI Analyzer] Processing image: ${imageUrl}`);
+
+        if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+            // Cloudinary / remote URL — fetch and convert to base64
+            const fetchResp = await fetch(imageUrl);
+            if (!fetchResp.ok) {
+                throw new Error(`Failed to fetch image (${fetchResp.status}): ${fetchResp.statusText}`);
+            }
+            const arrayBuf = await fetchResp.arrayBuffer();
+            const ct       = fetchResp.headers.get('content-type') || '';
+            mimeType       = ct.split(';')[0].trim() || 'image/jpeg';
+            base64Data     = Buffer.from(arrayBuf).toString('base64');
+            console.log(`[AI Analyzer] Fetched from remote URL. mimeType=${mimeType}, size=${arrayBuf.byteLength} bytes`);
+        } else {
+            // Local disk path (Multer disk storage fallback)
+            const absolutePath = path.isAbsolute(imageUrl)
+                ? imageUrl
+                : path.join(process.cwd(), imageUrl);
+
+            if (!fs.existsSync(absolutePath)) {
+                throw new Error(`Local file not found: ${absolutePath}`);
+            }
+
+            const buffer = fs.readFileSync(absolutePath);
+            base64Data   = buffer.toString('base64');
+            const ext    = path.extname(absolutePath).toLowerCase();
+            if      (ext === '.png')  mimeType = 'image/png';
+            else if (ext === '.webp') mimeType = 'image/webp';
+            else if (ext === '.gif')  mimeType = 'image/gif';
+            else                      mimeType = 'image/jpeg';
+            console.log(`[AI Analyzer] Loaded local file. mimeType=${mimeType}, size=${buffer.length} bytes`);
         }
 
-        const buffer = await response.arrayBuffer();
-        const mimeType = response.headers.get('content-type') || 'image/jpeg';
-        const base64Data = Buffer.from(buffer).toString('base64');
+        // ── 3. Build the prompt ───────────────────────────────────────────────
+        const prompt = `You are an expert animal welfare AI assistant analyzing images for a stray animal reporting platform.
 
-        const prompt = `You are an expert animal welfare AI. Analyze this image and respond ONLY with a valid JSON object — no markdown, no extra text.
+Analyze the image and respond with ONLY a valid JSON object — no markdown, no code fences, no extra text.
 
-Rules:
-- "isInjured": true if the animal appears wounded, sick, bleeding, limping, or in visible distress.
-- "urgencyLevel": one of "low", "medium", or "high". Use "high" if the animal is critically injured or in immediate danger.
-- "animalType": one of "dog", "cat", "bird", "cattle", or "other". Note: "cattle" include cows, bulls, buffaloes, and calves.
-- "aiDescription": a 1-2 sentence factual description of the animal's condition for the report.
+Required JSON fields:
+- "isInjured"     : boolean — true if the animal shows any wound, bleeding, limping, swelling, skin disease, or visible distress.
+- "urgencyLevel"  : string  — exactly one of: "low", "medium", "high". Use "high" for critical injuries or immediate danger.
+- "animalType"    : string  — exactly one of: "dog", "cat", "bird", "cattle", "other".
+- "aiDescription" : string  — Write a brief 2-3 line description covering: the animal type/breed, its visible condition or any injuries, and the surrounding environment. Keep it concise but informative as it will be stored in the database and shown on reports.
 
-Respond with ONLY this JSON structure:
-{"isInjured": false, "urgencyLevel": "low", "animalType": "dog", "aiDescription": "..."}`;
+Respond with ONLY the JSON object. Example format:
+{"isInjured": true, "urgencyLevel": "high", "animalType": "dog", "aiDescription": "A medium-sized stray dog with a dirty coat and a visible wound on its hind leg. The animal appears weak and unable to stand, with signs of infection. Found on a busy urban roadside with no shelter nearby."}
 
-        console.log(`[AI Analyzer] Sending image to Gemini 2.5 Flash for full analysis...`);
+Now analyze the uploaded image:`;
+
+        // ── 4. Call Gemini (new @google/genai SDK) ────────────────────────────
+        console.log(`[AI Analyzer] Calling ${WORKING_MODEL}...`);
 
         const result = await ai.models.generateContent({
-            model: 'gemini-1.5-flash',
+            model: WORKING_MODEL,
             contents: [
                 {
                     role: 'user',
                     parts: [
+                        { text: prompt },
                         {
                             inlineData: {
-                                data: base64Data,
+                                data:     base64Data,
                                 mimeType: mimeType
                             }
-                        },
-                        { text: prompt }
+                        }
                     ]
                 }
             ]
         });
 
-        const rawText = result.text.trim();
-        console.log(`[AI Analyzer] Raw Gemini response: ${rawText}`);
+        // ── 5. Safely extract text from response ──────────────────────────────
+        let rawText = '';
+        if (typeof result.text === 'string' && result.text.length > 0) {
+            rawText = result.text.trim();
+        } else if (result.candidates && result.candidates[0]) {
+            rawText = (result.candidates[0].content.parts || [])
+                .map(p => p.text || '')
+                .join('')
+                .trim();
+        }
 
-        // Strip markdown code fences if Gemini wraps with ```json ... ```
-        const cleaned = rawText.replace(/^```(?:json)?\s*/i, '').replace(/```\s*$/i, '').trim();
+        console.log(`[AI Analyzer] Raw response: ${rawText.substring(0, 300)}`);
+
+        if (!rawText) throw new Error('Gemini returned an empty response');
+
+        // Strip accidental markdown code fences
+        const cleaned = rawText
+            .replace(/^```(?:json)?\s*/i, '')
+            .replace(/```\s*$/i, '')
+            .trim();
+
+        // ── 6. Parse and validate ─────────────────────────────────────────────
         const analysis = JSON.parse(cleaned);
 
-        // Validate and sanitise values against allowed enums
-        const validUrgency = ['low', 'medium', 'high'];
+        const validUrgency    = ['low', 'medium', 'high'];
         const validAnimalType = ['dog', 'cat', 'bird', 'cattle', 'other'];
 
+        const aiDescription = (typeof analysis.aiDescription === 'string' ? analysis.aiDescription : '').trim();
+
+        console.log(`[AI Analyzer] ✓ Done — type:${analysis.animalType} | urgency:${analysis.urgencyLevel} | injured:${analysis.isInjured}`);
+        console.log(`[AI Analyzer] Description preview: "${aiDescription.substring(0, 150)}..."`);
+
         return {
-            isAnimal:      true,
-            isInjured:     typeof analysis.isInjured === 'boolean' ? analysis.isInjured : false,
-            urgencyLevel:  validUrgency.includes(analysis.urgencyLevel) ? analysis.urgencyLevel : 'low',
-            animalType:    validAnimalType.includes(analysis.animalType) ? analysis.animalType : 'other',
-            aiDescription: typeof analysis.aiDescription === 'string' ? analysis.aiDescription : ''
+            isAnimal:     true,
+            isInjured:    typeof analysis.isInjured === 'boolean' ? analysis.isInjured : false,
+            urgencyLevel: validUrgency.includes(analysis.urgencyLevel)  ? analysis.urgencyLevel : 'low',
+            animalType:   validAnimalType.includes(analysis.animalType) ? analysis.animalType   : 'other',
+            aiDescription
         };
 
     } catch (err) {
-        console.error('[AI Analyzer Error] Falling back to defaults:', err.message);
-        // Fallback: allow the report through without blocking, but log the error
+        const msg = err.message || String(err);
+        if (msg.includes('429') || msg.includes('RESOURCE_EXHAUSTED') || msg.includes('quota')) {
+            console.error('[AI Analyzer] ✗ Quota/Rate limit hit — using fallback. Try again later.');
+        } else if (msg.includes('404') || msg.includes('NOT_FOUND')) {
+            console.error('[AI Analyzer] ✗ Model not found — using fallback:', msg.substring(0, 120));
+        } else if (msg.includes('API_KEY') || msg.includes('INVALID_ARGUMENT')) {
+            console.error('[AI Analyzer] ✗ API key issue — using fallback:', msg.substring(0, 120));
+        } else {
+            console.error('[AI Analyzer] ✗ Unexpected error — using fallback:', msg.substring(0, 200));
+        }
         return fallback;
     }
 };

@@ -67,3 +67,35 @@ exports.updateShelterStatus = async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 };
+
+exports.getShelterNotifications = async (req, res) => {
+    try {
+        if (req.user.role !== 'shelter') {
+            return res.status(403).json({ error: 'Access denied: shelters only' });
+        }
+
+        const shelter = await Shelter.findOne({ userId: req.user.id });
+        if (!shelter) {
+            return res.status(404).json({ error: 'Shelter not found for this user' });
+        }
+
+        const notifications = [...shelter.notifications].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+        
+        // Mark all as read
+        let updated = false;
+        shelter.notifications.forEach(notif => {
+            if (!notif.read) {
+                notif.read = true;
+                updated = true;
+            }
+        });
+        
+        if (updated) {
+            await shelter.save();
+        }
+
+        res.json(notifications);
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
+};

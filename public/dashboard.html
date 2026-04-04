@@ -356,14 +356,21 @@
     <script src="js/taskCompletion.js"></script>
     <script>
         // API Configuration
-        const API_BASE = (window.location.port === '5500' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+        const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
         const socket = io(API_BASE);
 
         // Init Dashboard
         document.addEventListener('DOMContentLoaded', () => {
             const user = JSON.parse(localStorage.getItem('straySoulsUser'));
             if (user && user.role === 'volunteer') {
+                // Join volunteer room
+                socket.emit('join_role_room', 'volunteer');
+                
                 socket.on('newTaskBroadcast', () => loadOpenTasks());
+                socket.on('new_report_volunteers', (data) => {
+                    showToast(`🐾 New Report: ${data.message}`, 'success');
+                    loadOpenTasks();
+                });
                 socket.on('taskAccepted', () => { loadOpenTasks(); loadMyTasks(); });
                 socket.on('taskStatusUpdated', () => loadMyTasks());
                 socket.on('taskVerified', (data) => {
@@ -376,6 +383,9 @@
                 });
             }
             if (user && user.role === 'admin') {
+                // Join all rooms as admin
+                socket.emit('join_role_room', 'admin');
+                
                 const adminPanel = document.getElementById('admin-verification-panel');
                 if (adminPanel) adminPanel.style.display = 'block';
                 loadAdminVerificationQueue();

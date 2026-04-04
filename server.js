@@ -48,7 +48,27 @@ app.use('/api/tasks', taskRoutes);
 
 // Socket.io Connection
 io.on('connection', (socket) => {
-    // ...
+    console.log(`[Socket] Client connected: ${socket.id}`);
+
+    // Join role-based rooms
+    socket.on('join_role_room', (role) => {
+        if (role === 'volunteer') {
+            socket.join('volunteers_room');
+            console.log(`[Socket] ${socket.id} joined volunteers_room`);
+        } else if (role === 'shelter') {
+            socket.join('shelters_room');
+            console.log(`[Socket] ${socket.id} joined shelters_room`);
+        } else if (role === 'admin') {
+            socket.join('volunteers_room');
+            socket.join('shelters_room');
+            socket.join('admin_room');
+            console.log(`[Socket] ${socket.id} joined all rooms (admin)`);
+        }
+    });
+
+    socket.on('disconnect', () => {
+        console.log(`[Socket] Client disconnected: ${socket.id}`);
+    });
 });
 
 // 404/405 Handler for debugging

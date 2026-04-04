@@ -8,14 +8,19 @@ const ACCEPTED_ANIMAL_KEYWORDS = [
     'cat', 'dog', 'bird', 'animal', 'kitten', 'puppy', 'feline', 'canine',
     'tabby', 'stray', 'pet', 'mammal', 'pup', 'kitty', 'hound', 'retriever',
     'terrier', 'spaniel', 'shepherd', 'bulldog', 'poodle', 'beagle', 'rabbit',
-    'hamster', 'parrot', 'pigeon', 'crow', 'sparrow', 'goat', 'cattle', 'calf'
+    'hamster', 'parrot', 'pigeon', 'crow', 'sparrow', 'goat', 'cattle', 'calf',
+    'cow', 'bull', 'buffalo', 'ox', 'goat', 'sheep', 'pig', 'horse', 'pony',
+    'donkey', 'mule', 'camel', 'chicken', 'hen', 'rooster', 'duck', 'goose'
 ];
 
 async function loadMobileNet() {
     if (mobilenetModel) return mobilenetModel;
     try {
         console.log("Loading MobileNet model...");
-        // mobilenet is assumed to be globally available via CDN inclusion
+        // Check if mobilenet is available globally
+        if (typeof mobilenet === 'undefined') {
+            throw new Error("MobileNet library not loaded. Check script tags.");
+        }
         mobilenetModel = await mobilenet.load();
         console.log("MobileNet loaded successfully!");
         return mobilenetModel;
@@ -24,6 +29,9 @@ async function loadMobileNet() {
         throw err;
     }
 }
+
+// Preload on script load
+loadMobileNet().catch(console.error);
 
 /**
  * Validates an image file locally using MobileNet
@@ -40,6 +48,7 @@ async function validateProofImage(file, imgElement) {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 imgElement.src = e.target.result;
+                // Wait for image to load to get dimensions
                 imgElement.onload = async () => {
                     try {
                         const predictions = await model.classify(imgElement);
@@ -49,8 +58,11 @@ async function validateProofImage(file, imgElement) {
                         let animalDetected = false;
                         for (let i = 0; i < Math.min(3, predictions.length); i++) {
                             const className = predictions[i].className.toLowerCase();
+                            const prob = predictions[i].probability;
+                            
                             // Check if any accepted keyword is in the class name
-                            if (ACCEPTED_ANIMAL_KEYWORDS.some(keyword => className.includes(keyword))) {
+                            // Lower probability threshold to 0.03 for broad detection (same as imageVerifier)
+                            if (prob > 0.03 && ACCEPTED_ANIMAL_KEYWORDS.some(keyword => className.includes(keyword))) {
                                 animalDetected = true;
                                 break;
                             }

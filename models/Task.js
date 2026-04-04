@@ -26,7 +26,12 @@ const taskSchema = new mongoose.Schema({
     },
     assignedTo: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'User' // Linking to User ID (who has volunteer role)
+        refPath: 'assignedToModel'
+    },
+    assignedToModel: {
+        type: String,
+        enum: ['User', 'Shelter'],
+        default: 'User'
     },
     reportId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -61,6 +66,12 @@ const taskSchema = new mongoose.Schema({
         reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
         reviewedAt: { type: Date },
         rejectionReason: { type: String, default: '' }
+    },
+    routedTo: {
+        type: String,
+        enum: ['volunteers', 'shelters'],
+        required: true,
+        default: 'volunteers'
     }
 });
 

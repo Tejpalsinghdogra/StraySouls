@@ -54,6 +54,17 @@ const reportSchema = new mongoose.Schema({
         isInjured:     { type: Boolean, default: false },
         urgencyLevel:  { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
         aiDescription: { type: String, default: '' }
+    },
+    numberOfStrays: {
+        type: Number,
+        required: true,
+        min: 1,
+        max: 50
+    },
+    routedTo: {
+        type: String,
+        enum: ['volunteers', 'shelters'],
+        required: true
     }
 });
 
