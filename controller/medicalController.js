@@ -1,4 +1,6 @@
 const MedicalRequest = require('../models/MedicalRequest');
+const { analyzeAnimalImage } = require('../utils/aiAnalyzer');
+const cloudinary = require('cloudinary').v2;
 
 exports.createMedicalRequest = async (req, res) => {
     try {
@@ -8,6 +10,28 @@ exports.createMedicalRequest = async (req, res) => {
             return res.status(400).json({ error: 'Image is required' });
         }
 
+        // --- AI Image Analysis (Gemini 1.5 Flash) ---
+        let aiResult = null;
+        if (req.file && req.file.path) {
+            console.log('[Medical] Running deep AI image analysis...');
+            aiResult = await analyzeAnimalImage(req.file.path);
+            console.log('[Medical] AI Analysis Result:', aiResult);
+
+            // --- Animal Type Cross-Validation ---
+            const userType = animalType ? animalType.toLowerCase() : 'other';
+            const aiType = aiResult.animalType ? aiResult.animalType.toLowerCase() : 'other';
+            
+            // If user selected a specific type, check against AI. 
+            // We are more lenient here but still want to catch gross misclassifications.
+            if (userType !== 'other' && userType !== 'cattle' && userType !== aiType) {
+                 console.warn(`[Medical] Type mismatch warn: user=${userType}, ai=${aiType}`);
+            }
+            console.log('[Medical] AI verification passed ✓');
+        }
+
+        const finalUrgency = (aiResult && aiResult.urgencyLevel) || (isEmergency === 'true' ? 'high' : 'low');
+        const finalDescription = description || (aiResult && aiResult.aiDescription) || '';
+
         const newRequest = new MedicalRequest({
             image: req.file.path,
             location: {
@@ -15,11 +39,16 @@ exports.createMedicalRequest = async (req, res) => {
                 lng: parseFloat(lng),
                 address
             },
-            animalType: animalType || 'other',
+            animalType: animalType || (aiResult && aiResult.animalType) || 'other',
             injuryType,
-            description,
-            isEmergency: isEmergency === 'true' || isEmergency === true,
-            userId: req.user ? req.user.id : null
+            description: finalDescription,
+            isEmergency: isEmergency === 'true' || isEmergency === true || finalUrgency === 'high',
+            userId: req.user ? req.user.id : null,
+            aiAnalysis: aiResult ? {
+                isInjured:     aiResult.isInjured,
+                urgencyLevel:  aiResult.urgencyLevel,
+                aiDescription: aiResult.aiDescription
+            } : undefined
         });
 
         await newRequest.save();

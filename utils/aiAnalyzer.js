@@ -40,7 +40,7 @@ exports.analyzeAnimalImage = async (imageUrl) => {
 Rules:
 - "isInjured": true if the animal appears wounded, sick, bleeding, limping, or in visible distress.
 - "urgencyLevel": one of "low", "medium", or "high". Use "high" if the animal is critically injured or in immediate danger.
-- "animalType": one of "dog", "cat", "bird", "cattle", or "other".
+- "animalType": one of "dog", "cat", "bird", "cattle", or "other". Note: "cattle" include cows, bulls, buffaloes, and calves.
 - "aiDescription": a 1-2 sentence factual description of the animal's condition for the report.
 
 Respond with ONLY this JSON structure:
@@ -49,7 +49,7 @@ Respond with ONLY this JSON structure:
         console.log(`[AI Analyzer] Sending image to Gemini 2.5 Flash for full analysis...`);
 
         const result = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-1.5-flash',
             contents: [
                 {
                     role: 'user',

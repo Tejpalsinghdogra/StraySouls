@@ -47,6 +47,11 @@ const medicalRequestSchema = new mongoose.Schema({
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    aiAnalysis: {
+        isInjured:     { type: Boolean, default: false },
+        urgencyLevel:  { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
+        aiDescription: { type: String, default: '' }
     }
 });
 

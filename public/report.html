@@ -150,15 +150,18 @@
             const display = document.getElementById('type-display-container');
             const select = document.getElementById('manual-animal-type');
             const btn = document.getElementById('change-type-btn');
+            const animalInput = document.getElementById('animal-type');
             
             if (select.style.display === 'none') {
                 display.style.display = 'none';
                 select.style.display = 'block';
                 btn.innerText = 'Go back to AI detection';
+                select.value = animalInput.value || 'other';
             } else {
                 display.style.display = 'block';
                 select.style.display = 'none';
-                btn.innerHTML = `Not a <span id="btn-type-text">${document.getElementById('animal-type').value.toUpperCase()}</span>? Change`;
+                const currentType = (animalInput.value || 'Animal').toUpperCase();
+                btn.innerHTML = `Not a <span id="btn-type-text">${currentType}</span>? Change`;
             }
         }
 
