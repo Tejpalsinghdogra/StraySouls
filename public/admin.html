@@ -136,6 +136,82 @@
                 white-space: nowrap;
             }
         }
+
+        /* Verification Queue Styling */
+        .verification-img {
+            width: 100px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 4px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            transition: transform 0.2s;
+        }
+        .verification-img:hover { transform: scale(1.05); }
+        .reject-reason-box {
+            display: none;
+            background: #fdf2f2;
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #f5c6cb;
+            margin-top: 10px;
+        }
+        .reject-reason-box textarea {
+            width: 100%;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+        }
+        
+        .lightbox-overlay {
+            display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .lightbox-content {
+            max-width: 90vw; max-height: 85vh; border-radius: 8px; object-fit: contain; box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+        }
+        .lightbox-caption { color: white; margin-top: 15px; font-size: 1.1rem; font-weight: 600; }
+        .lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; }
+
+        /* Card-based Verification Queue UI */
+        .verification-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1rem;
+        }
+        @media (max-width: 650px) {
+            .verification-grid { grid-template-columns: 1fr; }
+        }
+        .v-card {
+            background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; 
+            border: 1px solid #eee; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+        }
+        .v-card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+        .v-card-header {
+            background: #fafafa; padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 0.9rem;
+            display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-color);
+        }
+        .v-card-body { padding: 15px; }
+        .v-comparison {
+            display: flex; gap: 12px; margin-bottom: 15px;
+        }
+        .v-img-box {
+            flex: 1; text-align: center; background: #f8f9fa; border-radius: 8px; padding: 10px;
+        }
+        .v-img-box p { font-size: 0.75rem; font-weight: bold; color: #7f8c8d; margin-bottom: 8px; }
+        .v-img-box img {
+            width: 100%; height: 180px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: opacity 0.2s;
+        }
+        .v-img-box img:hover { opacity: 0.9; }
+        .v-note {
+            background: #fff9db; padding: 10px; border-radius: 8px; font-size: 0.9rem; font-style: italic; margin-bottom: 15px; border-left: 3px solid #fcc419;
+        }
+        .v-footer { display: flex; gap: 10px; }
+        
+        .pulse-red { animation: pulseRed 1s infinite alternate; box-shadow: 0 0 15px #e74c3c; }
+        @keyframes pulseRed { from { transform: scale(1); } to { transform: scale(1.1); } }
+        .card-removed { opacity: 0; transform: scale(0.9) translateY(-20px); filter: blur(4px); }
     </style>
 </head>
 
@@ -148,6 +224,9 @@
             <ul>
                 <li><a href="admin.html" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="admin-reports.html"><i class="fas fa-exclamation-circle"></i> Reports</a></li>
+                <li><a href="resolved-reports.html"><i class="fas fa-check-circle"></i> Resolved Reports
+                    <span id="resolved-badge" style="background:#2ecc71; color:white; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:5px; display:none;">0</span>
+                </a></li>
                 <li><a href="admin-shelters.html"><i class="fas fa-home"></i> Shelters</a></li>
                 <li><a href="admin-volunteers.html"><i class="fas fa-users"></i> Volunteers</a></li>
                 <li><a href="index.html" onclick="logout()" style="margin-top: 2rem; color: #e74c3c;"><i
@@ -246,82 +325,243 @@
                     </div>
                 </div>
 
-                <!-- Recent Reports Table -->
-                <h3 class="mb-1">Recent Reports</h3>
+                <!-- Live Task Board -->
+                <h3 class="mb-1">Live Task Board</h3>
+                <div id="no-volunteers-alert" style="display:none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 4px; margin-bottom: 20px;">
+                    ⚠ No volunteers registered in the system
+                </div>
+                <div class="stats-cards" style="margin-bottom: 2rem;">
+                    <div class="stat-card">
+                        <div><h3 id="stat-open-tasks">0</h3><p>Open Tasks</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div><h3 id="stat-accepted-tasks">0</h3><p>Accepted</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div><h3 id="stat-inprogress-tasks">0</h3><p>In Progress</p></div>
+                    </div>
+                    <div class="stat-card">
+                        <div><h3 id="stat-completed-tasks">0</h3><p>Completed</p></div>
+                    </div>
+                </div>
+
                 <div class="table-container">
                     <table>
                         <thead>
                             <tr>
-                                <th>Type</th>
-                                <th>Location</th>
-                                <th>Date</th>
+                                <th>Report ID</th>
+                                <th>Animal Type</th>
+                                <th>Urgency</th>
                                 <th>Status</th>
-                                <th>Action</th>
+                                <th>Assigned To</th>
+                                <th>Broadcast Time</th>
                             </tr>
                         </thead>
-                        <tbody id="reports-table-body">
+                        <tbody id="live-tasks-body">
                             <tr>
-                                <td colspan="5" style="text-align: center;">Loading reports...</td>
+                                <td colspan="6" style="text-align: center;">Loading live tasks...</td>
                             </tr>
                         </tbody>
                     </table>
                 </div>
 
+                <!-- Verification Queue -->
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 2rem;">
+                    <h3 class="mb-1" id="verification-section">Awaiting Verification Status</h3>
+                    <span id="verification-badge" style="background:#e74c3c; color:white; border-radius:20px; padding:4px 14px; font-weight:700; font-size:0.95rem; display:none;">0 pending</span>
+                </div>
+                <div id="verification-container" class="verification-grid">
+                    <p style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #7f8c8d;">Loading pending items...</p>
+                </div>
+
             </div>
-        </div>
+        </div>    <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
+        <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
 
-        <!-- Assign Task Modal -->
-        <div id="assignModal" class="modal-overlay"
-            style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); display: none; justify-content: center; align-items: center; z-index: 1000;">
-            <div class="modal-content"
-                style="background: white; padding: 2rem; border-radius: 12px; width: 90%; max-width: 500px;">
-                <h2 class="mb-2">Assign Task to Volunteer</h2>
-                <form id="assign-task-form">
-                    <input type="hidden" id="report-id">
-                    <div class="form-group mb-1">
-                        <label>Task Title</label>
-                        <input type="text" id="task-title" class="form-control" placeholder="e.g. Rescue Injured Dog"
-                            required>
-                    </div>
-                    <div class="form-group mb-1">
-                        <label>Description</label>
-                        <textarea id="task-desc" class="form-control" rows="3" placeholder="Describe the task..."
-                            required></textarea>
-                    </div>
-                    <div class="form-group mb-2">
-                        <label>Urgency</label>
-                        <select id="task-urgency" class="form-control">
-                            <option value="low">Low</option>
-                            <option value="medium" selected>Medium</option>
-                            <option value="high">High</option>
-                            <option value="critical">Critical</option>
-                        </select>
-                    </div>
-                    <div style="display: flex; gap: 10px; justify-content: flex-end;">
-                        <button type="button" class="btn btn-outline" onclick="closeAssignModal()">Cancel</button>
-                        <button type="submit" class="btn btn-primary">Create Task</button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="js/script.js"></script>
+    <script>
+        const API_BASE = (window.location.port === '5500' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+        const socket = io(API_BASE);
 
-        <script src="js/script.js"></script>
-        <script>
-            // API Configuration
-            const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
-
-            document.addEventListener('DOMContentLoaded', () => {
+        let reportsData = []; document.addEventListener('DOMContentLoaded', () => {
                 loadStats();
                 loadReports();
                 loadShelters();
                 loadVolunteers();
+                loadLiveTasks();
+                loadVerificationQueue();
 
-                // Form Submit
-                const assignForm = document.getElementById('assign-task-form');
-                if (assignForm) {
-                    assignForm.addEventListener('submit', handleAssignTask);
-                }
+                // Socket.io Events
+                socket.on('newTaskBroadcast', () => loadLiveTasks());
+                socket.on('taskAccepted', () => loadLiveTasks());
+                socket.on('taskStatusUpdated', () => loadLiveTasks());
+                socket.on('noVolunteersAvailable', () => {
+                    document.getElementById('no-volunteers-alert').style.display = 'block';
+                });
+                socket.on('proofSubmitted', (data) => { 
+                    loadVerificationQueue(); 
+                    loadLiveTasks(); 
+                    const badge = document.getElementById('verification-badge');
+                    if(badge) {
+                        badge.classList.add('pulse-red');
+                        setTimeout(() => badge.classList.remove('pulse-red'), 4000);
+                    }
+                });
+                socket.on('taskVerified', (data) => { 
+                    const card = document.getElementById(`v-card-${data.taskId}`);
+                    if(card) {
+                        card.classList.add('card-removed');
+                        setTimeout(() => { card.remove(); loadVerificationQueue(); }, 400);
+                    } else {
+                        loadVerificationQueue(); 
+                    }
+                    loadLiveTasks(); loadStats(); 
+                });
+                socket.on('taskRejected', (data) => { 
+                    const card = document.getElementById(`v-card-${data.taskId}`);
+                    if(card) {
+                        card.classList.add('card-removed');
+                        setTimeout(() => { card.remove(); loadVerificationQueue(); }, 400);
+                    } else {
+                        loadVerificationQueue();
+                    }
+                    loadLiveTasks(); 
+                });
             });
+
+            async function loadVerificationQueue() {
+                const token = localStorage.getItem('straySoulsToken');
+                const container = document.getElementById('verification-container');
+                const badge = document.getElementById('verification-badge');
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/tasks/pending-verification`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+                    const tasks = await res.json();
+                    
+                    if (badge) {
+                        badge.textContent = `${tasks.length} pending`;
+                        badge.style.display = tasks.length > 0 ? 'inline-block' : 'none';
+                    }
+                    
+                    if (!Array.isArray(tasks) || tasks.length === 0) {
+                        container.innerHTML = `
+                        <div style="grid-column: 1/-1; text-align: center; padding: 4rem; background: white; border-radius: 12px; border: 2px dashed #eee;">
+                            <i class="fas fa-check-circle fa-3x" style="color:#2ecc71; margin-bottom: 1rem;"></i>
+                            <h4 style="color: #2c3e50;">No Pending Verifications</h4>
+                            <p style="color: #7f8c8d;">All submitted proofs have been reviewed.</p>
+                        </div>`;
+                        return;
+                    }
+                    
+                    container.innerHTML = tasks.map(t => {
+                        const report = t.reportId || {};
+                        const originalUrl = report.image ? (report.image.startsWith('http') ? report.image : API_BASE+'/'+report.image.replace(/^\//, '')) : 'https://placehold.co/250x180?text=Initial+Report';
+                        const timeAgo = Math.floor((Date.now() - new Date(t.completionProof.submittedAt)) / 60000);
+
+                        return `
+                        <div class="v-card" id="v-card-${t._id}">
+                            <div class="v-card-header">
+                                <div><strong>🐾 ID: ${report._id ? report._id.substring(0,8) : 'N/A'}</strong> | ${report.animalType || 'Unknown'}</div>
+                                <span class="badge ${report.urgency === 'high' ? 'badge-danger' : 'badge-pending'}">${(report.urgency||'').toUpperCase()}</span>
+                            </div>
+                            <div class="v-card-body">
+                                <div class="v-comparison">
+                                    <div class="v-img-box">
+                                        <p>Original Issue</p>
+                                        <img src="${originalUrl}" onclick="openLightbox(this.src, 'Original Report Image')">
+                                    </div>
+                                    <div class="v-img-box">
+                                        <p>Volunteer Proof</p>
+                                        <img src="${t.completionProof.imageUrl}" onclick="openLightbox(this.src, 'Volunteer Proof Image')">
+                                    </div>
+                                </div>
+                                <div class="v-note">
+                                    <i class="fas fa-quote-left" style="color: #fcc419; margin-right: 8px;"></i>
+                                    ${t.completionProof.note || 'No notes provided by volunteer.'}
+                                </div>
+                                <p style="font-size: 0.8rem; color: #95a5a6; margin-bottom: 12px;">Submitted by <strong>${t.assignedTo?t.assignedTo.name:'Volunteer'}</strong> • ${timeAgo}m ago</p>
+                                
+                                <div id="v-actions-${t._id}" class="v-footer">
+                                    <button class="btn btn-primary" style="flex: 1;" onclick="adminVerifyTask('${t._id}', 'verify')">Approve Solution</button>
+                                    <button class="btn btn-outline" style="flex: 1;" onclick="showRejectBox('${t._id}')">Reject Proof</button>
+                                </div>
+                                
+                                <div id="v-reject-box-${t._id}" class="reject-reason-box" style="margin-top:0;">
+                                    <textarea id="v-reason-${t._id}" class="form-control" placeholder="Explain why this proof was rejected..." rows="3"></textarea>
+                                    <div style="display: flex; gap: 8px; margin-top: 10px;">
+                                        <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="adminVerifyTask('${t._id}', 'reject')">Confirm Reject</button>
+                                        <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="hideRejectBox('${t._id}')">Back</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        `;
+                    }).join('');
+                } catch(e) {
+                    container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Check console for errors.</p>';
+                }
+            }
+
+            function showRejectBox(taskId) {
+                document.getElementById(`v-actions-${taskId}`).style.display = 'none';
+                document.getElementById(`v-reject-box-${taskId}`).style.display = 'block';
+            }
+            function hideRejectBox(taskId) {
+                document.getElementById(`v-reject-box-${taskId}`).style.display = 'none';
+                document.getElementById(`v-actions-${taskId}`).style.display = 'flex';
+            }
+
+            async function adminVerifyTask(taskId, action) {
+                const token = localStorage.getItem('straySoulsToken');
+                const reasonEl = document.getElementById(`v-reason-${taskId}`);
+                const reason = action === 'reject' ? reasonEl.value : '';
+                
+                if (action === 'reject' && (!reason || reason.trim().length < 5)) {
+                    showToast('Please provide a clearer rejection reason.', 'error');
+                    return;
+                }
+
+                try {
+                    const res = await fetch(`${API_BASE}/api/tasks/${taskId}/verify`, {
+                        method: 'PATCH',
+                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ action, rejectionReason: reason })
+                    });
+
+                    if (res.ok) {
+                        showToast(action === 'verify' ? 'Task successfully resolved!' : 'Resolution rejected.');
+                        // Card removal handled automatically by individual socket listeners or manual trigger below
+                        const card = document.getElementById(`v-card-${taskId}`);
+                        if(card) {
+                            card.classList.add('card-removed');
+                            setTimeout(() => { card.remove(); loadVerificationQueue(); }, 400);
+                        }
+                        loadLiveTasks();
+                    } else {
+                        const data = await res.json();
+                        showToast(data.error || 'Operation failed', 'error');
+                    }
+                } catch(err) {
+                    showToast('Network error occurred.', 'error');
+                }
+            }
+
+            function openLightbox(src, caption) {
+                document.getElementById('lightbox-img').src = src;
+                document.getElementById('lightbox-caption').textContent = caption;
+                document.getElementById('lightbox-modal').style.display = 'flex';
+            }
+            function closeLightbox(e) {
+                if (e.target.id === 'lightbox-modal' || e.target.classList.contains('lightbox-close')) {
+                    document.getElementById('lightbox-modal').style.display = 'none';
+                }
+            }
 
             function switchSection(sectionId, element) {
                 document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
@@ -350,6 +590,12 @@
                     document.getElementById('stat-pending-adoptions').textContent = stats.pendingAdoptions || 0;
                     document.getElementById('stat-shelter-requests').textContent = stats.shelterRequests || 0;
                     document.getElementById('stat-donations').textContent = `$${stats.donationsToday || 0}`;
+                    
+                    const resBadge = document.getElementById('resolved-badge');
+                    if (resBadge) {
+                        resBadge.textContent = stats.resolvedReports || 0;
+                        resBadge.style.display = stats.resolvedReports > 0 ? 'inline-block' : 'none';
+                    }
                 } catch (err) {
                     console.error('Error loading stats:', err);
                 }
@@ -381,19 +627,15 @@
                                 color: ${r.status === 'pending' ? '#ef6c00' : r.status === 'resolved' ? '#2e7d32' : r.status === 'critical' ? '#c62828' : '#1565c0'};
                             ">${r.status.toUpperCase()}</span>
                         </td>
-                        <td>
-                            ${r.status === 'pending' ?
-                            `<button class="btn btn-sm btn-primary" onclick='openAssignModal(${JSON.stringify(r)})'>Assign</button>` :
-                            r.status === 'resolved' ?
-                                '<span class="badge badge-success">COMPLETED</span>' :
-                                '<span class="text-sm">Active</span>'
-                        }
                         </td>
                     </tr>
                 `).join('');
                 } catch (err) {
                     console.error('Error loading reports:', err);
-                    document.getElementById('reports-table-body').innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Error loading reports</td></tr>';
+                    const reportsTableBody = document.getElementById('reports-table-body');
+                    if(reportsTableBody) {
+                        reportsTableBody.innerHTML = '<tr><td colspan="5" style="text-align: center; color: red;">Error loading reports</td></tr>';
+                    }
                 }
             }
 
@@ -423,84 +665,57 @@
                 document.getElementById('volunteers-table-body').innerHTML = '<tr><td colspan="4" class="text-center">Volunteer management is currently simplified. All registrations are auto-approved for this hackathon.</td></tr>';
             }
 
-            async function updateReportStatus(id, newStatus) {
+            async function loadLiveTasks() {
                 const token = localStorage.getItem('straySoulsToken');
                 try {
-                    const res = await fetch(`${API_BASE}/api/reports/${id}/status`, {
-                        method: 'PUT',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify({ status: newStatus })
+                    const res = await fetch(`${API_BASE}/api/tasks/live`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
                     });
-
-                    if (res.ok) {
-                        showToast(`Status updated to ${newStatus}`, 'success');
-                        loadReports();
-                        loadStats();
-                    } else {
-                        const data = await res.json();
-                        showToast(data.error || 'Failed to update status', 'error');
+                    const tasks = await res.json();
+                    
+                    const tbody = document.getElementById('live-tasks-body');
+                    
+                    if (!Array.isArray(tasks) || tasks.length === 0) {
+                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No active tasks right now</td></tr>';
+                        document.getElementById('stat-open-tasks').textContent = '0';
+                        document.getElementById('stat-accepted-tasks').textContent = '0';
+                        document.getElementById('stat-inprogress-tasks').textContent = '0';
+                        document.getElementById('stat-completed-tasks').textContent = '0';
+                        return;
                     }
+
+                    let openCount = 0, acceptedCount = 0, inprogressCount = 0, completedCount = 0;
+                    
+                    tbody.innerHTML = tasks.map(t => {
+                        if(t.status === 'open') openCount++;
+                        if(t.status === 'accepted') acceptedCount++;
+                        if(t.status === 'in_progress') inprogressCount++;
+                        if(t.status === 'completed') completedCount++;
+
+                        const assignedToName = t.assignedTo ? t.assignedTo.name : '<span style="color:#e74c3c">Awaiting acceptance...</span>';
+                        let badgeClass = 'badge-pending';
+                        if(t.status === 'accepted') badgeClass = 'badge-success';
+                        else if(t.status === 'in_progress') badgeClass = 'badge-success'; 
+                        
+                        return `
+                            <tr>
+                                <td>${t.reportId ? (t.reportId._id ? t.reportId._id.substring(0,8) + '...' : 'N/A') : 'N/A'}</td>
+                                <td>${t.title}</td>
+                                <td><span class="badge ${t.urgency === 'high' ? 'badge-danger' : 'badge-pending'}">${t.urgency.toUpperCase()}</span></td>
+                                <td><span class="badge ${badgeClass}">${t.status.toUpperCase()}</span></td>
+                                <td>${assignedToName}</td>
+                                <td>${new Date(t.broadcastedAt || t.createdAt).toLocaleTimeString()}</td>
+                            </tr>
+                        `;
+                    }).join('');
+
+                    document.getElementById('stat-open-tasks').textContent = openCount;
+                    document.getElementById('stat-accepted-tasks').textContent = acceptedCount;
+                    document.getElementById('stat-inprogress-tasks').textContent = inprogressCount;
+                    document.getElementById('stat-completed-tasks').textContent = completedCount;
+
                 } catch (err) {
-                    console.error('Error updating status:', err);
-                    showToast('Server error', 'error');
-                }
-            }
-
-            function openAssignModal(report) {
-                document.getElementById('report-id').value = report._id;
-                document.getElementById('task-title').value = `Rescue ${report.animalType} at ${report.location.address || 'Location'}`;
-                document.getElementById('task-desc').value = report.description || '';
-                document.getElementById('task-urgency').value = report.urgency || 'medium';
-                document.getElementById('assignModal').style.display = 'flex';
-            }
-
-            function closeAssignModal() {
-                document.getElementById('assignModal').style.display = 'none';
-            }
-
-            async function handleAssignTask(e) {
-                e.preventDefault();
-                const token = localStorage.getItem('straySoulsToken');
-                const reportId = document.getElementById('report-id').value;
-
-                try {
-                    // Get current reports to find specific location
-                    const resReports = await fetch(`${API_BASE}/api/reports`);
-                    const reports = await resReports.json();
-                    const report = reports.find(r => r._id === reportId);
-
-                    const taskData = {
-                        title: document.getElementById('task-title').value,
-                        description: document.getElementById('task-desc').value,
-                        urgency: document.getElementById('task-urgency').value,
-                        location: report.location,
-                        reportId: reportId
-                    };
-
-                    const res = await fetch(`${API_BASE}/api/tasks`, {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
-                        body: JSON.stringify(taskData)
-                    });
-
-                    if (res.ok) {
-                        showToast('Task created and volunteer notified!', 'success');
-                        closeAssignModal();
-                        loadReports();
-                        loadStats();
-                    } else {
-                        const data = await res.json();
-                        showToast(data.error || 'Failed to create task', 'error');
-                    }
-                } catch (err) {
-                    console.error('Error creating task:', err);
-                    showToast('Server error', 'error');
+                    console.error('Error loading live tasks:', err);
                 }
             }
         </script>

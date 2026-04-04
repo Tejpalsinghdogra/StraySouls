@@ -5,6 +5,7 @@ const upload = require('../middlewares/upload');
 const optionalAuth = require('../middlewares/optionalAuth');
 
 router.get('/', reportController.getReports);
+router.get('/resolved', reportController.getResolvedReports);
 router.get('/stats', reportController.getReportStats);
 router.get('/:id', reportController.getReportById);
 router.put('/:id/status', reportController.updateReportStatus);

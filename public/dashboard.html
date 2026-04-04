@@ -178,6 +178,58 @@
             margin-bottom: 1.5rem;
             background-color: #f8f9fa;
         }
+
+        /* Admin Verification Cards & Lightbox */
+        .verification-card {
+            background: white; border-radius: 12px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); margin-bottom: 1.5rem; overflow: hidden; border: 1px solid #eee; transition: all 0.4s ease;
+        }
+        .verification-card .card-header {
+            background: #f8f9fa; padding: 12px 20px; border-bottom: 1px solid #eee; font-size: 0.95rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap;
+        }
+        .proof-images-container {
+            display: flex; gap: 20px; padding: 20px; flex-wrap: wrap;
+        }
+        .image-column {
+            flex: 1; min-width: 200px; text-align: center;
+        }
+        .image-column p {
+            font-weight: 600; color: #7f8c8d; font-size: 0.85rem; margin-bottom: 10px; letter-spacing: 1px;
+        }
+        .image-column img {
+            width: 100%; max-width: 250px; height: 200px; object-fit: cover; border-radius: 8px; cursor: zoom-in; box-shadow: 0 2px 6px rgba(0,0,0,0.1); border: 2px solid transparent; transition: border 0.2s;
+        }
+        .image-column img:hover { border-color: var(--primary-color); }
+        .card-note {
+            padding: 0 20px 15px; font-style: italic; color: #34495e; border-bottom: 1px dashed #eee;
+        }
+        .card-footer {
+            padding: 15px 20px; display: flex; gap: 10px; background: #fafbfc;
+        }
+        .reject-panel {
+            padding: 15px 20px; background: #fdf2f2; border-top: 1px solid #f5c6cb;
+        }
+        .reject-panel textarea { width: 100%; resize: none; margin-bottom: 5px; }
+
+        .lightbox-overlay {
+            display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
+            justify-content: center; align-items: center; flex-direction: column;
+        }
+        .lightbox-content {
+            max-width: 90vw; max-height: 85vh; border-radius: 8px; object-fit: contain; box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+        }
+        .lightbox-caption { color: white; margin-top: 15px; font-size: 1.1rem; letter-spacing: 1px; font-weight: 600; }
+        .lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; }
+        
+        .pulse-badge { animation: pulse 1s infinite alternate; }
+        @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.1); box-shadow: 0 0 10px #e74c3c; } }
+        .slide-up-fade { opacity: 0; transform: translateY(-30px); margin-bottom: -150px; pointer-events: none; }
+        
+        .shimmer {
+            background: #f6f7f8; background-image: linear-gradient(to right, #f6f7f8 0%, #edeef1 20%, #f6f7f8 40%, #f6f7f8 100%);
+            background-repeat: no-repeat; background-size: 800px 100%; animation: shimmer 1.5s infinite linear;
+        }
+        @keyframes shimmer { 0% { background-position: -400px 0; } 100% { background-position: 400px 0; } }
     </style>
 </head>
 
@@ -213,6 +265,17 @@
     </div>
 
     <div class="container" style="min-height: 50vh;">
+
+        <!-- Admin Verification Section -->
+        <div id="admin-verification-panel" style="display: none; margin-bottom: 2rem;">
+            <div style="display: flex; align-items: center; justify-content: space-between; border-bottom: 2px solid var(--primary-color); padding-bottom: 0.5rem; margin-bottom: 1rem;">
+                <h2 style="margin: 0; color: #2c3e50;"><i class="fas fa-clipboard-check"></i> Pending Verifications</h2>
+                <span id="admin-verification-badge" style="background:#e74c3c; color:white; border-radius:15px; padding:4px 12px; font-weight:600; font-size:0.9rem; transition: transform 0.3s; display:none;">0 awaiting review</span>
+            </div>
+            <div id="admin-verification-list">
+                <!-- Skeleton loader / Cards go here -->
+            </div>
+        </div>
 
         <div class="tab-nav">
             <button class="tab-btn active" onclick="switchTab('reports')">My Reports</button>
@@ -279,14 +342,74 @@
         </div>
     </footer>
 
+    <!-- Lightbox Modal -->
+    <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
+        <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
+        <img class="lightbox-content" id="lightbox-img">
+        <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/mobilenet"></script>
     <script src="js/script.js"></script>
+    <script src="js/taskCompletion.js"></script>
     <script>
         // API Configuration
-        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+        const API_BASE = (window.location.port === '5500' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+        const socket = io(API_BASE);
 
         // Init Dashboard
         document.addEventListener('DOMContentLoaded', () => {
             const user = JSON.parse(localStorage.getItem('straySoulsUser'));
+            if (user && user.role === 'volunteer') {
+                socket.on('newTaskBroadcast', () => loadOpenTasks());
+                socket.on('taskAccepted', () => { loadOpenTasks(); loadMyTasks(); });
+                socket.on('taskStatusUpdated', () => loadMyTasks());
+                socket.on('taskVerified', (data) => {
+                    showToast(data.message || 'Task Verified!', 'success');
+                    loadMyTasks();
+                });
+                socket.on('taskRejected', (data) => {
+                    showToast('Proof Rejected: ' + data.rejectionReason, 'error');
+                    loadMyTasks();
+                });
+            }
+            if (user && user.role === 'admin') {
+                const adminPanel = document.getElementById('admin-verification-panel');
+                if (adminPanel) adminPanel.style.display = 'block';
+                loadAdminVerificationQueue();
+
+                // Admin Socket Listeners
+                socket.on('proofSubmitted', () => {
+                    if (document.getElementById('admin-verification-panel')) {
+                        loadAdminVerificationQueue();
+                        // Pulse animation & sound
+                        const badge = document.getElementById('admin-verification-badge');
+                        badge.classList.add('pulse-badge');
+                        setTimeout(()=> badge.classList.remove('pulse-badge'), 3000);
+                        try { new Audio('https://www.soundjay.com/buttons/sounds/button-14.mp3').play(); } catch(e){}
+                    }
+                });
+                socket.on('taskVerified', (data) => {
+                    const card = document.getElementById(`verification-card-${data.taskId}`);
+                    if (card) {
+                        card.classList.add('slide-up-fade');
+                        setTimeout(()=> { card.remove(); loadAdminVerificationQueue(); }, 400);
+                    } else {
+                        if (document.getElementById('admin-verification-panel')) loadAdminVerificationQueue();
+                    }
+                });
+                socket.on('taskRejected', (data) => {
+                    const card = document.getElementById(`verification-card-${data.taskId}`);
+                    if (card) {
+                        card.classList.add('slide-up-fade');
+                        setTimeout(()=> { card.remove(); loadAdminVerificationQueue(); }, 400);
+                    } else {
+                        if (document.getElementById('admin-verification-panel')) loadAdminVerificationQueue();
+                    }
+                });
+            }
             if (user) {
                 document.getElementById('user-name').textContent = user.name;
 
@@ -613,15 +736,17 @@
             const token = localStorage.getItem('straySoulsToken');
             const list = document.getElementById('open-tasks-list');
             try {
-                const res = await fetch(`${API_BASE}/api/tasks`, {
+                const res = await fetch(`${API_BASE}/api/tasks/live`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
-                const tasks = await res.json();
+                const allLiveTasks = await res.json();
 
-                if (!Array.isArray(tasks)) {
-                    list.innerHTML = `<p class="text-center text-danger">Error: ${tasks.error || 'Failed to load tasks'}</p>`;
+                if (!Array.isArray(allLiveTasks)) {
+                    list.innerHTML = `<p class="text-center text-danger">Error: ${allLiveTasks.error || 'Failed to load tasks'}</p>`;
                     return;
                 }
+                
+                const tasks = allLiveTasks.filter(t => t.status === 'open');
 
                 if (tasks.length === 0) {
                     list.innerHTML = '<p class="text-center">No open tasks available right now. Check back later!</p>';
@@ -635,8 +760,7 @@
                             <p class="text-sm">Location: ${t.location.address || 'Specified on map'}</p>
                         </div>
                         <div style="display: flex; gap: 8px;">
-                            <button class="btn btn-primary btn-sm" onclick="acceptTask('${t._id}')">Accept</button>
-                            <button class="btn btn-outline btn-sm" onclick="declineTask('${t._id}')">Decline</button>
+                            <button class="btn btn-primary btn-sm" onclick="acceptTask('${t._id}')">Accept Task</button>
                         </div>
                     </div>
                 `).join('');
@@ -649,7 +773,7 @@
             const token = localStorage.getItem('straySoulsToken');
             const list = document.getElementById('my-tasks-list');
             try {
-                const res = await fetch(`${API_BASE}/api/tasks/my-tasks`, {
+                const res = await fetch(`${API_BASE}/api/tasks/my`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 const tasks = await res.json();
@@ -665,7 +789,24 @@
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn btn-outline btn-sm" onclick='showDetails("task", ${JSON.stringify(t)})'>Details</button>
-                            <button class="btn btn-danger btn-sm" onclick='declineTask("${t._id}")'>Cancel</button>
+                            ${t.status === 'accepted' ? 
+                                `<button class="btn btn-primary btn-sm" onclick='updateTaskStatus("${t._id}", "in_progress")'>Mark In Progress</button>` :
+                              t.status === 'in_progress' ?
+                                `<div style="width:100%; border:1px solid #ccc; padding:10px; border-radius:6px; margin-top:5px; background: whitesmoke;">
+                                    <label class="text-sm font-weight-bold">Verification Proof</label>
+                                    <input type="file" id="proof-img-${t._id}" accept="image/*" class="form-control mb-1" onchange="handleProofSelect('${t._id}')" />
+                                    <img id="proof-preview-${t._id}" style="width: 100px; display:none; border-radius:5px; margin-bottom:5px;" />
+                                    <p id="proof-status-${t._id}" class="text-sm" style="font-weight:600; margin: 3px 0;"></p>
+                                    <textarea id="proof-note-${t._id}" class="form-control mb-1" placeholder="Completion Note (optional)" rows="2"></textarea>
+                                    <button id="proof-submit-${t._id}" class="btn btn-success btn-sm mt-1" disabled onclick="submitTaskProof('${t._id}')">Submit for Verification</button>
+                                </div>` :
+                              t.status === 'pending_verification' ?
+                                `<span class="badge" style="background:#f39c12; color:white; padding:5px 10px; border-radius:15px;"><i class="fas fa-hourglass-half"></i> Awaiting Admin Verification</span>` :
+                              t.status === 'completed' ?
+                                `<span class="badge" style="background:#2ecc71; color:white; padding:5px 10px; border-radius:15px;"><i class="fas fa-check-circle"></i> Verified & Completed</span>` :
+                                t.status === 'rejected' ?
+                                `<span class="badge" style="background:#e74c3c; color:white; padding:5px 10px; border-radius:15px;"><i class="fas fa-times-circle"></i> Rejected</span>` :
+                                ''}
                         </div>
                     </div>
                 `).join('');
@@ -678,41 +819,314 @@
             const token = localStorage.getItem('straySoulsToken');
             try {
                 const res = await fetch(`${API_BASE}/api/tasks/${taskId}/accept`, {
-                    method: 'PUT',
+                    method: 'POST',
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 if (res.ok) {
-                    showToast('Task accepted!', 'success');
+                    showToast('Task Assigned to You ✓', 'success');
                     loadOpenTasks();
                     loadMyTasks();
                 } else {
                     const data = await res.json();
-                    showToast(data.error || 'Failed to accept task', 'error');
+                    showToast(data.message || data.error || 'Failed to accept task', 'error');
+                    loadOpenTasks(); // refresh if claimed by someone else
                 }
             } catch (err) {
                 showToast('Error accepting task', 'error');
             }
         }
 
-        async function declineTask(taskId) {
+        async function updateTaskStatus(taskId, status) {
             const token = localStorage.getItem('straySoulsToken');
             try {
-                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/reject`, {
-                    method: 'PUT',
-                    headers: { 'Authorization': `Bearer ${token}` }
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/status`, {
+                    method: 'PATCH',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json' 
+                    },
+                    body: JSON.stringify({ status })
                 });
                 if (res.ok) {
-                    showToast('Task declined/updated', 'success');
-                    loadOpenTasks();
+                    showToast(`Task marked as ${status.replace('_', ' ')}`, 'success');
                     loadMyTasks();
                 } else {
                     const data = await res.json();
-                    showToast(data.error || 'Failed to decline task', 'error');
+                    showToast(data.message || data.error || 'Failed to update task', 'error');
                 }
             } catch (err) {
-                showToast('Error declining task', 'error');
+                showToast('Error updating task', 'error');
             }
         }
+
+        async function handleProofSelect(taskId) {
+            const input = document.getElementById(`proof-img-${taskId}`);
+            const preview = document.getElementById(`proof-preview-${taskId}`);
+            const statusTxt = document.getElementById(`proof-status-${taskId}`);
+            const submitBtn = document.getElementById(`proof-submit-${taskId}`);
+            
+            submitBtn.disabled = true;
+            statusTxt.textContent = "Verifying image...";
+            statusTxt.style.color = "gray";
+
+            if (input.files && input.files[0]) {
+                const file = input.files[0];
+                preview.style.display = 'block';
+                
+                try {
+                    // Assuming validateProofImage is globally available from taskCompletion.js
+                    const isAnimal = await window.validateProofImage(file, preview);
+                    if (isAnimal) {
+                        statusTxt.textContent = "✓ Animal detected — proof looks good";
+                        statusTxt.style.color = "green";
+                        submitBtn.disabled = false;
+                    } else {
+                        statusTxt.textContent = "✗ No animal detected in this image. Please retake the photo with the animal clearly visible.";
+                        statusTxt.style.color = "red";
+                    }
+                } catch (err) {
+                    statusTxt.textContent = "Error scanning image.";
+                    statusTxt.style.color = "red";
+                }
+            } else {
+                preview.style.display = 'none';
+                statusTxt.textContent = "";
+            }
+        }
+
+        async function submitTaskProof(taskId) {
+            const token = localStorage.getItem('straySoulsToken');
+            const fileInput = document.getElementById(`proof-img-${taskId}`);
+            const noteInput = document.getElementById(`proof-note-${taskId}`);
+            const submitBtn = document.getElementById(`proof-submit-${taskId}`);
+
+            if (!fileInput.files || fileInput.files.length === 0) {
+                showToast("Please select a proof image first.", "error"); return;
+            }
+
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Submitting...';
+
+            const formData = new FormData();
+            formData.append('image', fileInput.files[0]);
+            formData.append('note', noteInput.value);
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/complete`, {
+                    method: 'POST',
+                    headers: { 'Authorization': `Bearer ${token}` },
+                    body: formData
+                });
+                
+                if (res.ok) {
+                    showToast('Proof submitted! Awaiting admin verification.', 'success');
+                    loadMyTasks(); // Reload to show pending badge
+                } else {
+                    const data = await res.json();
+                    showToast(data.error || 'Submission failed.', 'error');
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = 'Submit for Verification';
+                }
+            } catch (err) {
+                console.error(err);
+                showToast("Server connection failed.", "error");
+                submitBtn.disabled = false;
+                submitBtn.textContent = 'Submit for Verification';
+            }
+        }
+
+        // --- ADMIN VERIFICATION QUEUE LOGIC ---
+        async function loadAdminVerificationQueue() {
+            const token = localStorage.getItem('straySoulsToken');
+            const list = document.getElementById('admin-verification-list');
+            const badge = document.getElementById('admin-verification-badge');
+            
+            if (!list) return; // Not an admin interface if it doesn't exist
+
+            list.innerHTML = `
+                <div class="verification-card shimmer" style="height:250px;"></div>
+                <div class="verification-card shimmer" style="height:250px;"></div>
+            `;
+            badge.style.display = 'inline-block';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/pending-verification`, {
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+                });
+                
+                if (res.status === 401) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+
+                const tasks = await res.json();
+                badge.textContent = `${tasks.length} awaiting review`;
+
+                if (tasks.length === 0) {
+                    badge.style.display = 'none';
+                    list.innerHTML = `<div class="item-card" style="justify-content:center; padding:3rem; border:2px dashed #eee;"><h4 style="margin:0; color:#2ecc71;"><i class="fas fa-check-circle"></i> All caught up! No tasks pending verification.</h4></div>`;
+                    return;
+                }
+
+                list.innerHTML = tasks.map(task => {
+                    const report = task.reportId || {};
+                    const timeBtn = new Date(task.completionProof.submittedAt);
+                    const diffMins = Math.floor((new Date() - timeBtn) / 60000);
+                    let timeAgo = diffMins + " mins";
+                    if (diffMins > 60) timeAgo = Math.floor(diffMins/60) + " hrs";
+                    if (diffMins > 1440) timeAgo = Math.floor(diffMins/1440) + " days";
+
+                    let uCol = '#2ecc71'; if(report.urgency==='high') uCol='#e74c3c'; if(report.urgency==='medium') uCol='#f39c12';
+                    const originalUrl = report.image ? (report.image.startsWith('http') ? report.image : API_BASE+'/'+report.image.replace(/^\//, '')) : 'https://placehold.co/100x80?text=No+Image';
+
+                    return `
+                    <div class="verification-card" id="verification-card-${task._id}">
+                        <div class="card-header">
+                            <div><strong>🐾 Report #${report._id ? report._id.substring(0,6) : 'N/A'}</strong> | Animal: ${(report.animalType || 'N/A').toUpperCase()} | Urgency: <span class="badge" style="background:${uCol};">${((report.urgency||'')).toUpperCase()}</span></div>
+                            <div>Volunteer: ${task.assignedTo ? task.assignedTo.name : 'Unknown'} | Submitted: ${timeAgo} ago</div>
+                        </div>
+                        <div class="card-body proof-images-container">
+                            <div class="image-column">
+                                <p>ORIGINAL REPORT</p>
+                                <img src="${originalUrl}" onclick="openLightbox(this.src, 'Original Report Image')" class="lightbox-trigger">
+                            </div>
+                            <div class="image-column">
+                                <p>VOLUNTEER PROOF</p>
+                                <img src="${task.completionProof.imageUrl}" onclick="openLightbox(this.src, 'Volunteer Proof Image')" class="lightbox-trigger">
+                            </div>
+                        </div>
+                        <div class="card-note">
+                            <strong>Volunteer Note:</strong><br>
+                            "${task.completionProof.note || 'No note provided'}"
+                        </div>
+                        <div class="card-footer" id="verify-actions-${task._id}">
+                            <button class="btn btn-success" id="btn-approve-${task._id}" onclick="approveVerification('${task._id}')"><i class="fas fa-check"></i> Approve & Complete</button>
+                            <button class="btn btn-danger" id="btn-reject-${task._id}" onclick="showRejectionPanel('${task._id}')"><i class="fas fa-times"></i> Reject</button>
+                        </div>
+                        
+                        <div class="reject-panel" id="reject-panel-${task._id}" style="display:none;">
+                            <label style="font-weight:600; font-size:0.9rem; color:#c0392b;">Reason for rejection (required)</label>
+                            <textarea id="reject-reason-${task._id}" class="form-control" placeholder="e.g. Image does not show the animal clearly, please retake the photo..." minlength="10" maxlength="300" oninput="document.getElementById('char-count-${task._id}').textContent = this.value.length + ' / 300'"></textarea>
+                            <small id="char-count-${task._id}" style="display:block; text-align:right; color:#7f8c8d; margin-bottom:10px;">0 / 300</small>
+                            <div style="display:flex; gap:10px;">
+                                <button class="btn btn-danger" id="btn-confirm-reject-${task._id}" onclick="confirmReject('${task._id}')">Confirm Reject</button>
+                                <button class="btn btn-outline" id="btn-cancel-reject-${task._id}" onclick="hideRejectionPanel('${task._id}')">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    `;
+                }).join('');
+
+            } catch(e) {
+                console.error(e);
+                list.innerHTML = '<p class="text-center text-danger">Unable to load verifications. Refresh the page.</p>';
+            }
+        }
+
+        async function approveVerification(taskId) {
+            const token = localStorage.getItem('straySoulsToken');
+            const btnA = document.getElementById(`btn-approve-${taskId}`);
+            const btnR = document.getElementById(`btn-reject-${taskId}`);
+            
+            btnA.disabled = true; btnR.disabled = true;
+            btnA.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+            
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/verify`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'verify' })
+                });
+                
+                if (res.ok) {
+                    showToast('✅ Task verified! Volunteer has been notified.', 'success');
+                    const card = document.getElementById(`verification-card-${taskId}`);
+                    if(card) {
+                        card.classList.add('slide-up-fade');
+                        setTimeout(() => { card.remove(); loadAdminVerificationQueue(); }, 400);
+                    }
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || "Something went wrong. Please try again.", "error");
+                    btnA.disabled = false; btnR.disabled = false;
+                    btnA.innerHTML = '<i class="fas fa-check"></i> Approve & Complete';
+                }
+            } catch(e) {
+                showToast("Something went wrong. Please try again.", "error");
+                btnA.disabled = false; btnR.disabled = false;
+                btnA.innerHTML = '<i class="fas fa-check"></i> Approve & Complete';
+            }
+        }
+
+        function showRejectionPanel(taskId) {
+            document.getElementById(`verify-actions-${taskId}`).style.display = 'none';
+            document.getElementById(`reject-panel-${taskId}`).style.display = 'block';
+        }
+
+        function hideRejectionPanel(taskId) {
+            document.getElementById(`reject-panel-${taskId}`).style.display = 'none';
+            document.getElementById(`verify-actions-${taskId}`).style.display = 'flex';
+            document.getElementById(`reject-reason-${taskId}`).value = '';
+            document.getElementById(`char-count-${taskId}`).textContent = '0 / 300';
+        }
+
+        async function confirmReject(taskId) {
+            const token = localStorage.getItem('straySoulsToken');
+            const btnConfirm = document.getElementById(`btn-confirm-reject-${taskId}`);
+            const btnCancel = document.getElementById(`btn-cancel-reject-${taskId}`);
+            const reasonInput = document.getElementById(`reject-reason-${taskId}`).value.trim();
+
+            if (reasonInput.length < 10) {
+                showToast('Reason must be at least 10 characters long.', 'error');
+                return;
+            }
+
+            btnConfirm.disabled = true; btnCancel.disabled = true;
+            btnConfirm.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Processing...';
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/verify`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action: 'reject', rejectionReason: reasonInput })
+                });
+
+                if (res.ok) {
+                    showToast('❌ Proof rejected. Volunteer notified with reason.', 'success');
+                    const card = document.getElementById(`verification-card-${taskId}`);
+                    if(card) {
+                        card.classList.add('slide-up-fade');
+                        setTimeout(() => { card.remove(); loadAdminVerificationQueue(); }, 400);
+                    }
+                } else {
+                    const err = await res.json();
+                    showToast(err.error || "Something went wrong. Please try again.", "error");
+                    btnConfirm.disabled = false; btnCancel.disabled = false;
+                    btnConfirm.innerHTML = 'Confirm Reject';
+                }
+            } catch(e) {
+                showToast("Something went wrong. Please try again.", "error");
+                btnConfirm.disabled = false; btnCancel.disabled = false;
+                btnConfirm.innerHTML = 'Confirm Reject';
+            }
+        }
+
+        function openLightbox(src, caption) {
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox-caption').textContent = caption;
+            document.getElementById('lightbox-modal').style.display = 'flex';
+        }
+        function closeLightbox(e) {
+            if (e.target.id === 'lightbox-modal' || e.target.classList.contains('lightbox-close')) {
+                document.getElementById('lightbox-modal').style.display = 'none';
+            }
+        }
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('lightbox-modal').style.display === 'flex') {
+                document.getElementById('lightbox-modal').style.display = 'none';
+            }
+        });
+
     </script>
 </body>
 

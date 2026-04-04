@@ -35,12 +35,24 @@ const reportSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ['pending', 'in progress', 'resolved', 'critical'],
+        enum: ['pending', 'open', 'accepted', 'in_progress', 'resolved'],
         default: 'pending'
+    },
+    resolvedAt: {
+        type: Date
+    },
+    resolvedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'Volunteer'
     },
     createdAt: {
         type: Date,
         default: Date.now
+    },
+    aiAnalysis: {
+        isInjured:     { type: Boolean, default: false },
+        urgencyLevel:  { type: String, enum: ['low', 'medium', 'high'], default: 'low' },
+        aiDescription: { type: String, default: '' }
     }
 });
 

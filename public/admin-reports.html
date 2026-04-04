@@ -288,9 +288,22 @@
         </div>
     </div>
 
+    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
     <script src="js/script.js"></script>
     <script>
-        const API_BASE = window.location.port === '5500' ? 'http://localhost:3000' : '';
+        const API_BASE = (window.location.port === '5500' || window.location.protocol === 'file:') ? 'http://localhost:3000' : '';
+        const socket = io(API_BASE);
+
+        socket.on('reportResolved', (data) => {
+            console.log('Report Resolved via Socket:', data);
+            const row = document.getElementById(`report-row-${data.reportId}`);
+            if (row) {
+                row.style.background = '#e8f5e9';
+                setTimeout(() => {
+                    loadReports(); // Refresh to get the latest badges and info
+                }, 1000);
+            }
+        });
 
         let allReports = [];
 
@@ -325,8 +338,25 @@
                 return;
             }
 
-            tbody.innerHTML = reports.map(r => `
-                    <tr style="border-bottom: 1px solid #f4f4f4;">
+            tbody.innerHTML = reports.map(r => {
+                let statusBadge = '';
+                switch(r.status) {
+                    case 'pending': statusBadge = '<span class="badge" style="background:#eee; color:#666;">Pending</span>'; break;
+                    case 'open': statusBadge = '<span class="badge" style="background:#e3f2fd; color:#1565c0;">Open</span>'; break;
+                    case 'assigned': statusBadge = '<span class="badge" style="background:#fff3e0; color:#ef6c00;">Assigned</span>'; break;
+                    case 'in_progress': statusBadge = '<span class="badge" style="background:#fff8e1; color:#f57f17;">In Progress</span>'; break;
+                    case 'resolved': statusBadge = '<span class="badge" style="background:#e8f5e9; color:#2e7d32; font-weight:700;">✅ Resolved</span>'; break;
+                    default: statusBadge = `<span class="badge">${r.status}</span>`;
+                }
+
+                const resolvedInfo = r.status === 'resolved' ? 
+                    `<div style="font-size: 0.75rem; color: #27ae60; margin-top: 4px;">
+                        Res. by: ${r.resolvedBy ? (r.resolvedBy.name || 'Volunteer') : 'N/A'}<br>
+                        ${new Date(r.resolvedAt).toLocaleDateString()}
+                    </div>` : '';
+
+                return `
+                    <tr id="report-row-${r._id}" style="border-bottom: 1px solid #f4f4f4; transition: background 0.5s;">
                         <td style="padding: 15px; font-weight: 500;">${r.animalType.toUpperCase()}</td>
                         <td style="padding: 15px;">
                             <a href="https://www.google.com/maps?q=${r.location.lat},${r.location.lng}" target="_blank" style="font-size: 0.85rem; color: var(--secondary-color); text-decoration: underline; font-weight: 500;">
@@ -335,21 +365,20 @@
                         </td>
                         <td style="padding: 15px;"><span class="badge-urgency badge-${r.urgency || 'low'}">${(r.urgency || 'Low').toUpperCase()}</span></td>
                         <td style="padding: 15px;">
-                            <select class="status-dropdown" onchange="updateReportStatus('${r._id}', this.value)">
-                                <option value="pending" ${r.status === 'pending' ? 'selected' : ''}>Pending</option>
-                                <option value="in progress" ${r.status === 'in progress' ? 'selected' : ''}>In Progress</option>
-                                <option value="resolved" ${r.status === 'resolved' ? 'selected' : ''}>Resolved</option>
-                            </select>
+                            ${statusBadge}
+                            ${resolvedInfo}
                         </td>
                         <td style="padding: 15px;">
                             ${r.status === 'pending' ?
                     `<button class="btn-assign" onclick='openAssignModal(${JSON.stringify(r)})'><i class="fas fa-user-plus"></i> Assign</button>` :
+                    r.status === 'resolved' ? '<span style="color: #27ae60; font-weight: 600;"><i class="fas fa-check-double"></i> Complete</span>' :
                     '<span style="color: #2ecc71; font-weight: 600;"><i class="fas fa-check-circle"></i> Active Task</span>'
                 }
                         </td>
                         <td style="padding: 15px;"><button class="btn btn-sm btn-link" onclick="viewDetails('${r._id}')" style="color: var(--secondary-color); font-weight: 500;">View File</button></td>
                     </tr>
-                `).join('');
+                `;
+            }).join('');
         }
 
         async function loadEntities() {

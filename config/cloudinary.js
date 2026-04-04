@@ -13,6 +13,8 @@ const storage = new CloudinaryStorage({
         folder: (req, file) => {
             if (req.originalUrl.includes('medical')) {
                 return 'straysouls_medical';
+            } else if (req.originalUrl.includes('tasks')) {
+                return 'straysouls/proofs';
             }
             return 'straysouls_reports';
         },
