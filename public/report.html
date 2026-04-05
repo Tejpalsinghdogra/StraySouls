@@ -126,6 +126,9 @@
 
                     <input type="radio" name="urgency" id="u-high" value="high">
                     <label for="u-high" class="u-high">Injured / Critical</label>
+
+                    <input type="radio" name="urgency" id="u-sterilization" value="sterilization">
+                    <label for="u-sterilization" class="u-sterilization">Sterilization</label>
                 </div>
 
                 <div class="form-group">
@@ -181,6 +184,9 @@
 
         numberOfStraysInput.addEventListener('input', () => {
             const count = parseInt(numberOfStraysInput.value);
+            const sterilizationRadio = document.getElementById('u-sterilization');
+            const sterilizationLabel = document.querySelector('label[for="u-sterilization"]');
+
             if (!count || count <= 0) {
                 routingHintBox.className = "routing-hint-box hidden";
             } else if (count <= 2) {
@@ -191,6 +197,23 @@
                 routingHintIcon.className = "fas fa-building";
                 routingHintText.innerHTML = "<strong>Escalated to NGOs & Shelters:</strong> Mass rescue team required.";
                 routingHintBox.className = "routing-hint-box show routing-shelters";
+            }
+
+            // Sterilization: only available when more than 2 strays
+            if (count > 2) {
+                sterilizationRadio.disabled = false;
+                sterilizationLabel.style.opacity = '1';
+                sterilizationLabel.style.cursor = 'pointer';
+                sterilizationLabel.title = '';
+            } else {
+                sterilizationRadio.disabled = true;
+                sterilizationLabel.style.opacity = '0.4';
+                sterilizationLabel.style.cursor = 'not-allowed';
+                sterilizationLabel.title = 'Sterilization requires more than 2 strays';
+                // If sterilization was selected, reset to low
+                if (sterilizationRadio.checked) {
+                    document.getElementById('u-low').checked = true;
+                }
             }
         });
 

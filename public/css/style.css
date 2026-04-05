@@ -409,6 +409,12 @@ footer {
     border-color: #e74c3c;
 }
 
+.urgency-selector input:checked+label.u-sterilization {
+    background-color: #9b59b6;
+    color: white;
+    border-color: #9b59b6;
+}
+
 /* Utilities */
 .hidden {
     display: none;
