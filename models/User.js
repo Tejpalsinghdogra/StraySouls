@@ -19,6 +19,18 @@ const userSchema = new mongoose.Schema({
         enum: ['user', 'volunteer', 'admin', 'ngo', 'shelter'],
         default: 'user'
     },
+    // Reward System Fields
+    pointsBalance: {
+        type: Number,
+        default: 0
+    },
+    totalPointsEarned: {
+        type: Number,
+        default: 0
+    },
+    badges: [{
+        type: String
+    }],
     createdAt: {
         type: Date,
         default: Date.now

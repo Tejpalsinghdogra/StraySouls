@@ -11,43 +11,53 @@
         .admin-container {
             display: flex;
             min-height: 100vh;
+            background-color: var(--background-light);
         }
 
         .sidebar {
             width: 250px;
-            background-color: #2c3e50;
+            background: #2c3e50;
             color: white;
             padding: 2rem 1rem;
+            position: fixed;
+            height: 100%;
+            box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
         }
 
         .sidebar h2 {
-            color: var(--primary-color);
-            margin-bottom: 2rem;
+            font-size: 1.5rem;
+            margin-bottom: 2.5rem;
             text-align: center;
+            color: var(--primary-color);
+            letter-spacing: 1px;
         }
 
         .sidebar ul li {
-            margin-bottom: 1rem;
+            margin-bottom: 0.8rem;
         }
 
         .sidebar ul li a {
-            display: block;
-            padding: 10px;
             color: #bdc3c7;
-            border-radius: var(--radius);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 15px;
+            border-radius: 8px;
             transition: var(--transition);
+            font-weight: 500;
         }
 
         .sidebar ul li a:hover,
         .sidebar ul li a.active {
-            background-color: #34495e;
-            color: white;
+            background: rgba(46, 204, 113, 0.1);
+            color: var(--primary-color);
         }
 
         .main-content {
+            margin-left: 250px;
             flex: 1;
-            padding: 2rem;
-            background-color: #f4f6f9;
+            padding: 2.5rem;
         }
 
         .stats-cards {
@@ -147,7 +157,11 @@
             border: 1px solid #ddd;
             transition: transform 0.2s;
         }
-        .verification-img:hover { transform: scale(1.05); }
+
+        .verification-img:hover {
+            transform: scale(1.05);
+        }
+
         .reject-reason-box {
             display: none;
             background: #fdf2f2;
@@ -156,22 +170,52 @@
             border: 1px solid #f5c6cb;
             margin-top: 10px;
         }
+
         .reject-reason-box textarea {
             width: 100%;
             font-size: 0.85rem;
             margin-bottom: 5px;
         }
-        
+
         .lightbox-overlay {
-            display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.85); backdrop-filter: blur(5px);
-            justify-content: center; align-items: center; flex-direction: column;
+            display: none;
+            position: fixed;
+            z-index: 9999;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
         }
+
         .lightbox-content {
-            max-width: 90vw; max-height: 85vh; border-radius: 8px; object-fit: contain; box-shadow: 0 5px 25px rgba(0,0,0,0.5);
+            max-width: 90vw;
+            max-height: 85vh;
+            border-radius: 8px;
+            object-fit: contain;
+            box-shadow: 0 5px 25px rgba(0, 0, 0, 0.5);
         }
-        .lightbox-caption { color: white; margin-top: 15px; font-size: 1.1rem; font-weight: 600; }
-        .lightbox-close { position: absolute; top: 20px; right: 30px; color: white; font-size: 40px; font-weight: bold; cursor: pointer; }
+
+        .lightbox-caption {
+            color: white;
+            margin-top: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
 
         /* Card-based Verification Queue UI */
         .verification-grid {
@@ -180,38 +224,159 @@
             gap: 1.5rem;
             margin-top: 1rem;
         }
+
         @media (max-width: 650px) {
-            .verification-grid { grid-template-columns: 1fr; }
+            .verification-grid {
+                grid-template-columns: 1fr;
+            }
         }
+
         .v-card {
-            background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); overflow: hidden; 
-            border: 1px solid #eee; transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+            border: 1px solid #eee;
+            transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
         }
-        .v-card:hover { transform: translateY(-5px); box-shadow: 0 8px 24px rgba(0,0,0,0.12); }
+
+        .v-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
         .v-card-header {
-            background: #fafafa; padding: 12px 18px; border-bottom: 1px solid #eee; font-size: 0.9rem;
-            display: flex; justify-content: space-between; align-items: center; border-left: 4px solid var(--primary-color);
+            background: #fafafa;
+            padding: 12px 18px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid var(--primary-color);
         }
-        .v-card-body { padding: 15px; }
+
+        .v-card-body {
+            padding: 15px;
+        }
+
         .v-comparison {
-            display: flex; gap: 12px; margin-bottom: 15px;
+            display: flex;
+            gap: 12px;
+            margin-bottom: 15px;
         }
+
         .v-img-box {
-            flex: 1; text-align: center; background: #f8f9fa; border-radius: 8px; padding: 10px;
+            flex: 1;
+            text-align: center;
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 12px;
+            position: relative;
+            border: 1px solid #eee;
+            transition: border-color 0.3s;
         }
-        .v-img-box p { font-size: 0.75rem; font-weight: bold; color: #7f8c8d; margin-bottom: 8px; }
+
+        .v-img-box.before {
+            border-top: 4px solid #f39c12;
+        }
+
+        .v-img-box.after {
+            border-top: 4px solid #2ecc71;
+        }
+
+        .v-img-box p {
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+            letter-spacing: 1px;
+        }
+
+        .v-img-box.before p {
+            color: #d35400;
+        }
+
+        .v-img-box.after p {
+            color: #27ae60;
+        }
+
         .v-img-box img {
-            width: 100%; height: 180px; object-fit: cover; border-radius: 6px; cursor: pointer; transition: opacity 0.2s;
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
         }
-        .v-img-box img:hover { opacity: 0.9; }
+
+        .v-img-box img:hover {
+            transform: scale(1.02);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .v-vs-divider {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 900;
+            color: #ced4da;
+            font-size: 1.2rem;
+        }
+
+        .ai-badge-floating {
+            position: absolute;
+            top: 45px;
+            right: 20px;
+            background: rgba(52, 152, 219, 0.9);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.65rem;
+            font-weight: 700;
+            backdrop-filter: blur(4px);
+            box-shadow: 0 2px 10px rgba(52, 152, 219, 0.4);
+            pointer-events: none;
+        }
+
         .v-note {
-            background: #fff9db; padding: 10px; border-radius: 8px; font-size: 0.9rem; font-style: italic; margin-bottom: 15px; border-left: 3px solid #fcc419;
+            background: #fff9db;
+            padding: 12px 18px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-style: italic;
+            margin-bottom: 20px;
+            border-left: 4px solid #fcc419;
+            line-height: 1.5;
+            color: #5c5c5c;
         }
-        .v-footer { display: flex; gap: 10px; }
-        
-        .pulse-red { animation: pulseRed 1s infinite alternate; box-shadow: 0 0 15px #e74c3c; }
-        @keyframes pulseRed { from { transform: scale(1); } to { transform: scale(1.1); } }
-        .card-removed { opacity: 0; transform: scale(0.9) translateY(-20px); filter: blur(4px); }
+
+        .v-footer {
+            display: flex;
+            gap: 12px;
+        }
+
+        .pulse-red {
+            animation: pulseRed 1s infinite alternate;
+            box-shadow: 0 0 15px #e74c3c;
+        }
+
+        @keyframes pulseRed {
+            from {
+                transform: scale(1);
+            }
+
+            to {
+                transform: scale(1.1);
+            }
+        }
+
+        .card-removed {
+            opacity: 0;
+            transform: scale(0.9) translateY(-20px);
+            filter: blur(4px);
+        }
     </style>
 </head>
 
@@ -222,23 +387,31 @@
         <div class="sidebar">
             <h2>StraySouls Admin</h2>
             <ul>
-                <li><a href="admin.html" class="active"><i class="fas fa-chart-line"></i> Dashboard</a></li>
+                <li><a href="#" onclick="switchAdminSection('dashboard', this)" class="active"><i
+                            class="fas fa-chart-line"></i> Dashboard</a></li>
                 <li><a href="admin-reports.html"><i class="fas fa-exclamation-circle"></i> Reports</a></li>
                 <li><a href="resolved-reports.html"><i class="fas fa-check-circle"></i> Resolved Reports
-                    <span id="resolved-badge" style="background:#2ecc71; color:white; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:5px; display:none;">0</span>
-                </a></li>
+                        <span id="resolved-badge"
+                            style="background:#2ecc71; color:white; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:5px; display:none;">0</span>
+                    </a></li>
                 <li><a href="admin-shelters.html"><i class="fas fa-home"></i> Shelters</a></li>
                 <li><a href="admin-volunteers.html"><i class="fas fa-users"></i> Volunteers</a></li>
-                <li><a href="#" onclick="switchAdminSection('ngos', this)"><i class="fas fa-building"></i> Appoint NGO</a></li>
+                <li><a href="#" onclick="switchAdminSection('verification', this)"><i class="fas fa-tasks"></i> NGO
+                        Mission Review
+                        <span id="verification-sidebar-badge"
+                            style="background:#e74c3c; color:white; border-radius:10px; padding:2px 8px; font-size:0.8rem; margin-left:5px; display:none;">0</span>
+                    </a></li>
+                <li><a href="#" onclick="switchAdminSection('ngos', this)"><i class="fas fa-building"></i> Appoint
+                        NGO</a></li>
                 <li><a href="index.html" onclick="logout()" style="margin-top: 2rem; color: #e74c3c;"><i
-                            class="fas fa-sign-out-alt"></i>
-                        Logout</a></li>
+                            class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </div>
 
         <!-- Main Content -->
         <div class="main-content">
-            <!-- Dashboard Section -->
+
+            <!-- ============ SECTION: Dashboard ============ -->
             <div id="section-dashboard" class="admin-section">
                 <h1 class="mb-2">Admin Panel</h1>
 
@@ -274,25 +447,41 @@
                     </div>
                 </div>
 
-                <!-- Reports Section -->
-                <div id="section-reports" class="admin-section" style="display: none;">
-                    <h1 class="mb-2">All Reports</h1>
+                <!-- Reports Table -->
+                <div id="section-reports" style="margin-bottom: 2rem;">
                     <div style="margin-bottom: 1rem;">
                         <label for="routedToFilter"><strong>Filter by Routing:</strong></label>
-                        <select id="routedToFilter" onchange="loadReports()" style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; margin-left: 10px;">
+                        <select id="routedToFilter" onchange="loadReports()"
+                            style="padding: 8px 12px; border-radius: 6px; border: 1px solid #ddd; margin-left: 10px;">
                             <option value="">All Reports</option>
-                            <option value="volunteers">🙋 Volunteer Reports</option>
-                            <option value="shelters">🏢 NGO/Shelter Reports</option>
+                            <option value="volunteers">Volunteer Reports</option>
+                            <option value="shelters">NGO/Shelter Reports</option>
                         </select>
                     </div>
-                    <div class="table-container" id="reports-section-content">
-                        <!-- Reports table will be cloned here -->
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Type</th>
+                                    <th>Location</th>
+                                    <th>Count</th>
+                                    <th>Date</th>
+                                    <th>Status</th>
+                                    <th>Routed To</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reports-table-body">
+                                <tr>
+                                    <td colspan="6" class="text-center">Loading reports...</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- Shelters Section -->
-                <div id="section-shelters" class="admin-section" style="display: none;">
-                    <h1 class="mb-2">Shelter Partners</h1>
+                <!-- Shelters Table (hidden, used with switchSection) -->
+                <div id="section-shelters" style="display: none;">
+                    <h2 class="mb-2">Shelter Partners</h2>
                     <div class="table-container">
                         <table>
                             <thead>
@@ -312,9 +501,9 @@
                     </div>
                 </div>
 
-                <!-- Volunteers Section -->
-                <div id="section-volunteers" class="admin-section" style="display: none;">
-                    <h1 class="mb-2">Registered Volunteers</h1>
+                <!-- Volunteers Table (hidden, used with switchSection) -->
+                <div id="section-volunteers" style="display: none;">
+                    <h2 class="mb-2">Registered Volunteers</h2>
                     <div class="table-container">
                         <table>
                             <thead>
@@ -336,24 +525,36 @@
 
                 <!-- Live Task Board -->
                 <h3 class="mb-1">Live Task Board</h3>
-                <div id="no-volunteers-alert" style="display:none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 4px; margin-bottom: 20px;">
-                    ⚠ No volunteers registered in the system
+                <div id="no-volunteers-alert"
+                    style="display:none; background: #ffebee; color: #c62828; padding: 10px; border-radius: 4px; margin-bottom: 20px;">
+                    No volunteers registered in the system
                 </div>
                 <div class="stats-cards" style="margin-bottom: 2rem;">
                     <div class="stat-card">
-                        <div><h3 id="stat-open-tasks">0</h3><p>Open Tasks</p></div>
+                        <div>
+                            <h3 id="stat-open-tasks">0</h3>
+                            <p>Open Tasks</p>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div><h3 id="stat-accepted-tasks">0</h3><p>Accepted</p></div>
+                        <div>
+                            <h3 id="stat-accepted-tasks">0</h3>
+                            <p>Accepted</p>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div><h3 id="stat-inprogress-tasks">0</h3><p>In Progress</p></div>
+                        <div>
+                            <h3 id="stat-inprogress-tasks">0</h3>
+                            <p>In Progress</p>
+                        </div>
                     </div>
                     <div class="stat-card">
-                        <div><h3 id="stat-completed-tasks">0</h3><p>Completed</p></div>
+                        <div>
+                            <h3 id="stat-completed-tasks">0</h3>
+                            <p>Completed</p>
+                        </div>
                     </div>
                 </div>
-
                 <div class="table-container">
                     <table>
                         <thead>
@@ -373,23 +574,39 @@
                         </tbody>
                     </table>
                 </div>
+            </div>
+            <!-- END section-dashboard -->
 
-                <!-- Verification Queue -->
-                <div style="display: flex; align-items: center; justify-content: space-between; margin-top: 2rem;">
-                    <h3 class="mb-1" id="verification-section">Awaiting Verification Status</h3>
-                    <span id="verification-badge" style="background:#e74c3c; color:white; border-radius:20px; padding:4px 14px; font-weight:700; font-size:0.95rem; display:none;">0 pending</span>
+            <!-- ============ SECTION: NGO Verification ============ -->
+            <div id="section-verification" class="admin-section" style="display: none;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 2rem;">
+                    <div>
+                        <h1 class="mb-1">NGO Mission Verification</h1>
+                        <p class="text-muted">Review rescue proofs submitted by NGO partners. Approved missions resolve
+                            the corresponding report.</p>
+                    </div>
+                    <div style="text-align: right;">
+                        <span id="verification-header-badge"
+                            style="background:#e74c3c; color:white; border-radius:20px; padding:6px 16px; font-weight:700; font-size:1.1rem; display:none;">0
+                            proofs pending</span>
+                        <button class="btn btn-outline btn-sm ml-1" onclick="loadVerificationQueue()"><i
+                                class="fas fa-sync-alt"></i> Refresh Queue</button>
+                    </div>
                 </div>
                 <div id="verification-container" class="verification-grid">
-                    <p style="grid-column: 1/-1; text-align: center; padding: 3rem; color: #7f8c8d;">Loading pending items...</p>
+                    <p style="grid-column: 1/-1; text-align: center; padding: 4rem; color: #7f8c8d;">
+                        <i class="fas fa-spinner fa-spin fa-2x"></i><br>Scanning for pending reviews...
+                    </p>
                 </div>
-
             </div>
+            <!-- END section-verification -->
 
-            <!-- NGO Management Section -->
+            <!-- ============ SECTION: Appoint NGO ============ -->
             <div id="section-ngos" class="admin-section" style="display: none;">
                 <h1 class="mb-2">NGO Partnership Management</h1>
-                <p class="mb-2">NGOs are specialized partners appointed by the Admin. They handle reports with large numbers of strays.</p>
-                
+                <p class="mb-2">NGOs are specialized partners appointed by the Admin. They handle reports with large
+                    numbers of strays.</p>
+
                 <div class="stats-cards mb-2" style="grid-template-columns: 1fr 2fr; gap: 2rem;">
                     <!-- Create NGO Card -->
                     <div class="stat-card" style="flex-direction: column; align-items: stretch; height: auto;">
@@ -397,21 +614,26 @@
                         <form id="create-ngo-form" onsubmit="handleCreateNGO(event)">
                             <div class="form-group mb-1">
                                 <label style="font-size: 0.8rem;">Organization Name</label>
-                                <input type="text" id="ngo-org-name" class="form-control" required placeholder="e.g. Happy Paws NGO">
+                                <input type="text" id="ngo-org-name" class="form-control" required
+                                    placeholder="e.g. Happy Paws NGO">
                             </div>
                             <div class="form-group mb-1">
                                 <label style="font-size: 0.8rem;">Officer Name</label>
-                                <input type="text" id="ngo-name" class="form-control" required placeholder="e.g. John Doe">
+                                <input type="text" id="ngo-name" class="form-control" required
+                                    placeholder="e.g. John Doe">
                             </div>
                             <div class="form-group mb-1">
                                 <label style="font-size: 0.8rem;">Email (Login)</label>
-                                <input type="email" id="ngo-email" class="form-control" required placeholder="ngo@example.com">
+                                <input type="email" id="ngo-email" class="form-control" required
+                                    placeholder="ngo@example.com">
                             </div>
                             <div class="form-group mb-1">
                                 <label style="font-size: 0.8rem;">Password</label>
-                                <input type="password" id="ngo-password" class="form-control" required placeholder="********">
+                                <input type="password" id="ngo-password" class="form-control" required
+                                    placeholder="********">
                             </div>
-                            <button type="submit" class="btn btn-primary" style="width: 100%;" id="ngo-submit-btn">Authorize & Create Account</button>
+                            <button type="submit" class="btn btn-primary" style="width: 100%;"
+                                id="ngo-submit-btn">Authorize & Create Account</button>
                         </form>
                     </div>
 
@@ -438,448 +660,388 @@
                     </div>
                 </div>
             </div>
-        </div>    <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
-        <span class="lightbox-close" onclick="closeLightbox(event)">&times;</span>
+            <!-- END section-ngos -->
+
+        </div>
+        <!-- END main-content -->
+    </div>
+    <!-- END admin-container -->
+
+    <!-- Lightbox -->
+    <div id="lightbox-modal" class="lightbox-overlay" onclick="closeLightbox(event)">
+        <span class="lightbox-close">&times;</span>
         <img class="lightbox-content" id="lightbox-img">
         <div id="lightbox-caption" class="lightbox-caption"></div>
     </div>
 
-    <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
-    <script src="js/script.js"></script>
+    <script src="/socket.io/socket.io.js"></script>
     <script>
         const API_BASE = window.location.port === '3000' ? '' : 'http://localhost:3000';
         const socket = io(API_BASE);
 
-        let reportsData = []; document.addEventListener('DOMContentLoaded', () => {
-                // Join all rooms as admin
-                socket.emit('join_role_room', 'admin');
-                
-                loadStats();
-                loadReports();
-                loadShelters();
-                loadVolunteers();
-                loadLiveTasks();
+        document.addEventListener('DOMContentLoaded', () => {
+            socket.emit('join_role_room', 'admin');
+
+            // Initial Data Load
+            loadStats();
+            loadReports();
+            loadShelters();
+            loadVolunteers();
+            loadLiveTasks();
+            loadVerificationQueue();
+            loadNGOs();
+
+            // Hash Routing
+            if (window.location.hash === '#ngos') {
+                setTimeout(() => {
+                    const ngolink = document.querySelector('a[onclick*="ngos"]');
+                    if (ngolink) switchAdminSection('ngos', ngolink);
+                }, 300);
+            }
+            if (window.location.hash === '#verification') {
+                setTimeout(() => {
+                    const vlink = document.querySelector('a[onclick*="verification"]');
+                    if (vlink) switchAdminSection('verification', vlink);
+                }, 300);
+            }
+
+            // Socket Listeners
+            socket.on('newTaskBroadcast', () => loadLiveTasks());
+            socket.on('proofSubmitted', () => {
+                showToast('New proof submitted!', 'info');
                 loadVerificationQueue();
-
-                // Socket.io Events
-                socket.on('newTaskBroadcast', () => loadLiveTasks());
-                socket.on('new_report_volunteers', (data) => {
-                    showToast(`🐾 New Volunteer Report: ${data.message}`, 'success');
-                    loadReports();
-                    loadStats();
-                });
-                socket.on('new_report_shelters', (data) => {
-                    showToast(`🏢 New Escalated Report: ${data.message}`, 'success');
-                    loadReports();
-                    loadStats();
-                });
-                socket.on('taskAccepted', () => loadLiveTasks());
-                socket.on('taskStatusUpdated', () => loadLiveTasks());
-                socket.on('noVolunteersAvailable', () => {
-                    document.getElementById('no-volunteers-alert').style.display = 'block';
-                });
-                socket.on('proofSubmitted', (data) => { 
-                    loadVerificationQueue(); 
-                    loadLiveTasks(); 
-                    const badge = document.getElementById('verification-badge');
-                    if(badge) {
-                        badge.classList.add('pulse-red');
-                        setTimeout(() => badge.classList.remove('pulse-red'), 4000);
-                    }
-                });
-                socket.on('taskVerified', (data) => { 
-                    const card = document.getElementById(`v-card-${data.taskId}`);
-                    if(card) {
-                        card.classList.add('card-removed');
-                        setTimeout(() => { card.remove(); loadVerificationQueue(); }, 400);
-                    } else {
-                        loadVerificationQueue(); 
-                    }
-                    loadLiveTasks(); loadStats(); 
-                });
-                socket.on('taskRejected', (data) => { 
-                    const card = document.getElementById(`v-card-${data.taskId}`);
-                    if(card) {
-                        card.classList.add('card-removed');
-                        setTimeout(() => { card.remove(); loadVerificationQueue(); }, 400);
-                    } else {
-                        loadVerificationQueue();
-                    }
-                    loadLiveTasks(); 
-                });
+                loadLiveTasks();
             });
+            socket.on('taskVerified', (data) => {
+                removeCardLocal(data.taskId);
+                loadLiveTasks();
+                loadStats();
+            });
+            socket.on('taskRejected', (data) => {
+                removeCardLocal(data.taskId);
+                loadLiveTasks();
+            });
+            socket.on('taskAccepted', () => loadLiveTasks());
+            socket.on('reportResolved', () => loadStats());
+        });
 
-            async function loadVerificationQueue() {
-                const token = localStorage.getItem('straySoulsToken');
-                const container = document.getElementById('verification-container');
-                const badge = document.getElementById('verification-badge');
+        // --- Core Functions ---
 
-                try {
-                    const res = await fetch(`${API_BASE}/api/tasks/pending-verification`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const tasks = await res.json();
-                    
-                    if (badge) {
-                        badge.textContent = `${tasks.length} pending`;
-                        badge.style.display = tasks.length > 0 ? 'inline-block' : 'none';
-                    }
-                    
-                    if (!Array.isArray(tasks) || tasks.length === 0) {
-                        container.innerHTML = `
-                        <div style="grid-column: 1/-1; text-align: center; padding: 4rem; background: white; border-radius: 12px; border: 2px dashed #eee;">
-                            <i class="fas fa-check-circle fa-3x" style="color:#2ecc71; margin-bottom: 1rem;"></i>
-                            <h4 style="color: #2c3e50;">No Pending Verifications</h4>
-                            <p style="color: #7f8c8d;">All submitted proofs have been reviewed.</p>
-                        </div>`;
-                        return;
-                    }
-                    
-                    container.innerHTML = tasks.map(t => {
-                        const report = t.reportId || {};
-                        const originalUrl = report.image ? (report.image.startsWith('http') ? report.image : API_BASE+'/'+report.image.replace(/^\//, '')) : 'https://placehold.co/250x180?text=Initial+Report';
-                        const timeAgo = Math.floor((Date.now() - new Date(t.completionProof.submittedAt)) / 60000);
+        async function loadStats() {
+            try {
+                const res = await fetch(`${API_BASE}/api/reports/stats`);
+                const stats = await res.json();
+                document.getElementById('stat-total-reports').textContent = stats.totalReports || 0;
+                document.getElementById('stat-pending-adoptions').textContent = stats.pendingAdoptions || 0;
+                document.getElementById('stat-shelter-requests').textContent = stats.shelterRequests || 0;
+                document.getElementById('stat-donations').textContent = `$${stats.donationsToday || 0}`;
 
-                        return `
-                        <div class="v-card" id="v-card-${t._id}">
-                            <div class="v-card-header">
-                                <div><strong>🐾 ID: ${report._id ? report._id.substring(0,8) : 'N/A'}</strong> | ${report.animalType || 'Unknown'}</div>
-                                <span class="badge ${report.urgency === 'high' ? 'badge-danger' : 'badge-pending'}">${(report.urgency||'').toUpperCase()}</span>
-                            </div>
-                            <div class="v-card-body">
-                                <div class="v-comparison">
-                                    <div class="v-img-box">
-                                        <p>Original Issue</p>
-                                        <img src="${originalUrl}" onclick="openLightbox(this.src, 'Original Report Image')">
-                                    </div>
-                                    <div class="v-img-box">
-                                        <p>Volunteer Proof</p>
-                                        <img src="${t.completionProof.imageUrl}" onclick="openLightbox(this.src, 'Volunteer Proof Image')">
-                                    </div>
-                                </div>
-                                <div class="v-note">
-                                    <i class="fas fa-quote-left" style="color: #fcc419; margin-right: 8px;"></i>
-                                    ${t.completionProof.note || 'No notes provided by volunteer.'}
-                                </div>
-                                <p style="font-size: 0.8rem; color: #95a5a6; margin-bottom: 12px;">Submitted by <strong>${t.assignedTo?t.assignedTo.name:'Volunteer'}</strong> • ${timeAgo}m ago</p>
-                                
-                                <div id="v-actions-${t._id}" class="v-footer">
-                                    <button class="btn btn-primary" style="flex: 1;" onclick="adminVerifyTask('${t._id}', 'verify')">Approve Solution</button>
-                                    <button class="btn btn-outline" style="flex: 1;" onclick="showRejectBox('${t._id}')">Reject Proof</button>
-                                </div>
-                                
-                                <div id="v-reject-box-${t._id}" class="reject-reason-box" style="margin-top:0;">
-                                    <textarea id="v-reason-${t._id}" class="form-control" placeholder="Explain why this proof was rejected..." rows="3"></textarea>
-                                    <div style="display: flex; gap: 8px; margin-top: 10px;">
-                                        <button class="btn btn-danger btn-sm" style="flex: 1;" onclick="adminVerifyTask('${t._id}', 'reject')">Confirm Reject</button>
-                                        <button class="btn btn-outline btn-sm" style="flex: 1;" onclick="hideRejectBox('${t._id}')">Back</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                        `;
-                    }).join('');
-                } catch(e) {
-                    container.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Check console for errors.</p>';
+                const resBadge = document.getElementById('resolved-badge');
+                if (resBadge) {
+                    resBadge.textContent = stats.resolvedReports || 0;
+                    resBadge.style.display = stats.resolvedReports > 0 ? 'inline-block' : 'none';
                 }
-            }
+            } catch (err) { console.error('Stats error:', err); }
+        }
 
-            function showRejectBox(taskId) {
-                document.getElementById(`v-actions-${taskId}`).style.display = 'none';
-                document.getElementById(`v-reject-box-${taskId}`).style.display = 'block';
-            }
-            function hideRejectBox(taskId) {
-                document.getElementById(`v-reject-box-${taskId}`).style.display = 'none';
-                document.getElementById(`v-actions-${taskId}`).style.display = 'flex';
-            }
+        async function loadReports() {
+            try {
+                const filter = document.getElementById('routedToFilter')?.value || '';
+                const url = filter ? `${API_BASE}/api/reports?routedTo=${filter}` : `${API_BASE}/api/reports`;
+                const res = await fetch(url);
+                const reports = await res.json();
+                const tbody = document.getElementById('reports-table-body');
+                if (!tbody) return;
 
-            async function adminVerifyTask(taskId, action) {
-                const token = localStorage.getItem('straySoulsToken');
-                const reasonEl = document.getElementById(`v-reason-${taskId}`);
-                const reason = action === 'reject' ? reasonEl.value : '';
-                
-                if (action === 'reject' && (!reason || reason.trim().length < 5)) {
-                    showToast('Please provide a clearer rejection reason.', 'error');
+                if (!reports || reports.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No reports found</td></tr>';
                     return;
                 }
 
-                try {
-                    const res = await fetch(`${API_BASE}/api/tasks/${taskId}/verify`, {
-                        method: 'PATCH',
-                        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ action, rejectionReason: reason })
-                    });
+                tbody.innerHTML = reports.slice(0, 10).map(r => `
+                    <tr>
+                        <td>${(r.animalType || 'animal').toUpperCase()}</td>
+                        <td>${r.location?.address || 'N/A'}</td>
+                        <td>${r.numberOfStrays || 1} strays</td>
+                        <td>${new Date(r.createdAt).toLocaleDateString()}</td>
+                        <td><span class="badge ${getStatusBadge(r.status)}">${r.status.toUpperCase()}</span></td>
+                        <td>${r.routedTo === 'volunteers' ? 'Volunteers' : 'NGO/Shelter'}</td>
+                    </tr>
+                `).join('');
+            } catch (err) { console.error('Reports error:', err); }
+        }
 
-                    if (res.ok) {
-                        showToast(action === 'verify' ? 'Task successfully resolved!' : 'Resolution rejected.');
-                        // Card removal handled automatically by individual socket listeners or manual trigger below
-                        const card = document.getElementById(`v-card-${taskId}`);
-                        if(card) {
-                            card.classList.add('card-removed');
-                            setTimeout(() => { card.remove(); loadVerificationQueue(); }, 400);
-                        }
-                        loadLiveTasks();
-                    } else {
-                        const data = await res.json();
-                        showToast(data.error || 'Operation failed', 'error');
-                    }
-                } catch(err) {
-                    showToast('Network error occurred.', 'error');
-                }
-            }
+        function getStatusBadge(status) {
+            if (status === 'pending') return 'badge-pending';
+            if (status === 'resolved') return 'badge-success';
+            return 'badge-danger';
+        }
 
-            function openLightbox(src, caption) {
-                document.getElementById('lightbox-img').src = src;
-                document.getElementById('lightbox-caption').textContent = caption;
-                document.getElementById('lightbox-modal').style.display = 'flex';
-            }
-            function closeLightbox(e) {
-                if (e.target.id === 'lightbox-modal' || e.target.classList.contains('lightbox-close')) {
-                    document.getElementById('lightbox-modal').style.display = 'none';
-                }
-            }
-
-            function switchAdminSection(sectionId, element) {
-                document.querySelectorAll('.admin-section').forEach(s => s.style.display = 'none');
-                const section = document.getElementById(`section-${sectionId}`);
-                if (section) section.style.display = 'block';
-
-                document.querySelectorAll('.sidebar ul li a').forEach(a => a.classList.remove('active'));
-                if (element) element.classList.add('active');
-
-                if (sectionId === 'reports') {
-                    const reportsTable = document.getElementById('reports-table-body')?.closest('table')?.cloneNode(true);
-                    const reportsContent = document.getElementById('reports-section-content');
-                    if (reportsContent && reportsTable) {
-                        reportsContent.innerHTML = '';
-                        reportsContent.appendChild(reportsTable);
-                    }
-                } else if (sectionId === 'ngos') {
-                    loadNGOs();
-                }
-            }
-
-            // Alias for existing usages
-            const switchSection = switchAdminSection;
-
-            async function loadStats() {
-                try {
-                    const res = await fetch(`${API_BASE}/api/reports/stats`);
-                    const stats = await res.json();
-
-                    document.getElementById('stat-total-reports').textContent = stats.totalReports || 0;
-                    document.getElementById('stat-pending-adoptions').textContent = stats.pendingAdoptions || 0;
-                    document.getElementById('stat-shelter-requests').textContent = stats.shelterRequests || 0;
-                    document.getElementById('stat-donations').textContent = `$${stats.donationsToday || 0}`;
-                    
-                    const resBadge = document.getElementById('resolved-badge');
-                    if (resBadge) {
-                        resBadge.textContent = stats.resolvedReports || 0;
-                        resBadge.style.display = stats.resolvedReports > 0 ? 'inline-block' : 'none';
-                    }
-                } catch (err) {
-                    console.error('Error loading stats:', err);
-                }
-            }
-
-            async function loadReports() {
-                try {
-                    const filter = document.getElementById('routedToFilter')?.value || '';
-                    const url = filter ? `${API_BASE}/api/reports?routedTo=${filter}` : `${API_BASE}/api/reports`;
-                    const res = await fetch(url);
-                    const reports = await res.json();
-                    const tbody = document.getElementById('reports-table-body');
-
-                    if (!reports || reports.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="7" style="text-align: center;">No reports found</td></tr>';
-                        return;
-                    }
-
-                    tbody.innerHTML = reports.slice(0, 6).map(r => {
-                        const routingBadge = r.routedTo === 'volunteers'
-                            ? '<span style="padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; background: #dbeafe; color: #2563eb;">🙋 Volunteers</span>'
-                            : '<span style="padding: 3px 8px; border-radius: 10px; font-size: 0.75rem; background: #fef3c7; color: #d97706;">🏢 NGO/Shelter</span>';
-                        return `
-                        <tr>
-                            <td>${r.animalType.toUpperCase()}</td>
-                            <td>${r.location.address || 'N/A'}</td>
-                            <td>${r.numberOfStrays || 1} strays</td>
-                            <td>${new Date(r.createdAt).toLocaleDateString()}</td>
-                            <td>
-                                <span style="
-                                    padding: 4px 10px;
-                                    border-radius: 20px;
-                                    font-size: 0.78rem;
-                                    font-weight: 600;
-                                    background: ${r.status === 'pending' ? '#fff3e0' : r.status === 'resolved' ? '#e8f5e9' : r.status === 'critical' ? '#ffebee' : '#e3f2fd'};
-                                    color: ${r.status === 'pending' ? '#ef6c00' : r.status === 'resolved' ? '#2e7d32' : r.status === 'critical' ? '#c62828' : '#1565c0'};
-                                ">${r.status.toUpperCase()}</span>
-                            </td>
-                            <td>${routingBadge}</td>
-                        </tr>
-                    `}).join('');
-                } catch (err) {
-                    console.error('Error loading reports:', err);
-                    const reportsTableBody = document.getElementById('reports-table-body');
-                    if(reportsTableBody) {
-                        reportsTableBody.innerHTML = '<tr><td colspan="7" style="text-align: center; color: red;">Error loading reports</td></tr>';
-                    }
-                }
-            }
-
-            async function loadShelters() {
-                try {
-                    const res = await fetch(`${API_BASE}/api/shelters`);
-                    const shelters = await res.json();
-                    const tbody = document.getElementById('shelters-table-body');
-                    if (!shelters || shelters.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No shelters registered</td></tr>';
-                        return;
-                    }
-                    tbody.innerHTML = shelters.map(s => `
+        async function loadShelters() {
+            try {
+                const res = await fetch(`${API_BASE}/api/shelters`);
+                const data = await res.json();
+                const tbody = document.getElementById('shelters-table-body');
+                if (tbody) {
+                    tbody.innerHTML = data.map(s => `
                         <tr>
                             <td>${s.organizationName}</td>
                             <td>${s.contactEmail}</td>
                             <td>${s.address}</td>
                             <td><span class="badge badge-success">${s.status.toUpperCase()}</span></td>
                         </tr>
-                    `).join('');
-                } catch (err) {
-                    console.error('Error loading shelters:', err);
+                    `).join('') || '<tr><td colspan="4" class="text-center">No shelters found</td></tr>';
                 }
-            }
+            } catch (e) { }
+        }
 
-            async function loadVolunteers() {
-                document.getElementById('volunteers-table-body').innerHTML = '<tr><td colspan="4" class="text-center">Volunteer management is currently simplified. All registrations are auto-approved for this hackathon.</td></tr>';
-            }
+        async function loadVolunteers() {
+            const el = document.getElementById('volunteers-table-body');
+            if (el) el.innerHTML = '<tr><td colspan="4" class="text-center">Volunteer registry is active.</td></tr>';
+        }
 
-            async function loadLiveTasks() {
-                const token = localStorage.getItem('straySoulsToken');
-                try {
-                    const res = await fetch(`${API_BASE}/api/tasks/live`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const tasks = await res.json();
-                    
-                    const tbody = document.getElementById('live-tasks-body');
-                    
-                    if (!Array.isArray(tasks) || tasks.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="6" style="text-align: center;">No active tasks right now</td></tr>';
-                        document.getElementById('stat-open-tasks').textContent = '0';
-                        document.getElementById('stat-accepted-tasks').textContent = '0';
-                        document.getElementById('stat-inprogress-tasks').textContent = '0';
-                        document.getElementById('stat-completed-tasks').textContent = '0';
-                        return;
-                    }
+        async function loadLiveTasks() {
+            const token = localStorage.getItem('straySoulsToken');
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/live`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tasks = await res.json();
+                const tbody = document.getElementById('live-tasks-body');
+                if (!tbody) return;
 
-                    let openCount = 0, acceptedCount = 0, inprogressCount = 0, completedCount = 0;
-                    
-                    tbody.innerHTML = tasks.map(t => {
-                        if(t.status === 'open') openCount++;
-                        if(t.status === 'accepted') acceptedCount++;
-                        if(t.status === 'in_progress') inprogressCount++;
-                        if(t.status === 'completed') completedCount++;
-
-                        const assignedToName = t.assignedTo ? t.assignedTo.name : '<span style="color:#e74c3c">Awaiting acceptance...</span>';
-                        let badgeClass = 'badge-pending';
-                        if(t.status === 'accepted') badgeClass = 'badge-success';
-                        else if(t.status === 'in_progress') badgeClass = 'badge-success'; 
-                        
-                        return `
-                            <tr>
-                                <td>${t.reportId ? (t.reportId._id ? t.reportId._id.substring(0,8) + '...' : 'N/A') : 'N/A'}</td>
-                                <td>${t.title}</td>
-                                <td><span class="badge ${t.urgency === 'high' ? 'badge-danger' : 'badge-pending'}">${t.urgency.toUpperCase()}</span></td>
-                                <td><span class="badge ${badgeClass}">${t.status.toUpperCase()}</span></td>
-                                <td>${assignedToName}</td>
-                                <td>${new Date(t.broadcastedAt || t.createdAt).toLocaleTimeString()}</td>
-                            </tr>
-                        `;
-                    }).join('');
-
-                    document.getElementById('stat-open-tasks').textContent = openCount;
-                    document.getElementById('stat-accepted-tasks').textContent = acceptedCount;
-                    document.getElementById('stat-inprogress-tasks').textContent = inprogressCount;
-                    document.getElementById('stat-completed-tasks').textContent = completedCount;
-
-                } catch (err) {
-                    console.error('Error loading live tasks:', err);
+                if (!Array.isArray(tasks) || tasks.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="6" class="text-center">No active tasks</td></tr>';
+                    ['stat-open-tasks', 'stat-accepted-tasks', 'stat-inprogress-tasks', 'stat-completed-tasks'].forEach(id => document.getElementById(id).textContent = '0');
+                    return;
                 }
-            }
 
-            async function loadNGOs() {
-                const token = localStorage.getItem('straySoulsToken');
-                const tbody = document.getElementById('ngos-table-body');
-                try {
-                    const res = await fetch(`${API_BASE}/api/shelters`, {
-                        headers: { 'Authorization': `Bearer ${token}` }
-                    });
-                    const shelters = await res.json();
-                    
-                    // Filter for NGOs (if we use role in future or just show all for now)
-                    // For now, all shelters are effectively NGOs in the system
-                    if (!shelters || shelters.length === 0) {
-                        tbody.innerHTML = '<tr><td colspan="4" class="text-center">No NGOs appointed yet</td></tr>';
-                        return;
-                    }
-                    
-                    tbody.innerHTML = shelters.map(s => `
+                let counts = { open: 0, accepted: 0, in_progress: 0, completed: 0, pending_verification: 0 };
+                tbody.innerHTML = tasks.map(t => {
+                    counts[t.status] = (counts[t.status] || 0) + 1;
+                    const assignee = t.assignedTo?.name || t.assignedTo?.organizationName || 'N/A';
+                    return `
+                        <tr>
+                            <td>${t.reportId ? t.reportId.toString().substring(0, 8) : 'Manual'}</td>
+                            <td>${t.title}</td>
+                            <td><span class="badge ${t.urgency === 'high' ? 'badge-danger' : 'badge-pending'}">${t.urgency.toUpperCase()}</span></td>
+                            <td><span class="badge ${t.status === 'completed' ? 'badge-success' : 'badge-pending'}">${t.status.replace('_', ' ').toUpperCase()}</span></td>
+                            <td>${assignee}</td>
+                            <td>${new Date(t.createdAt).toLocaleTimeString()}</td>
+                        </tr>
+                    `;
+                }).join('');
+
+                Object.keys(counts).forEach(k => {
+                    const el = document.getElementById(`stat-${k.replace('_', '')}-tasks`);
+                    if (el) el.textContent = counts[k];
+                });
+            } catch (err) { }
+        }
+
+        async function loadNGOs() {
+            const token = localStorage.getItem('straySoulsToken');
+            const tbody = document.getElementById('ngos-table-body');
+            try {
+                const res = await fetch(`${API_BASE}/api/shelters`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const data = await res.json();
+                if (tbody) {
+                    tbody.innerHTML = data.map(s => `
                         <tr>
                             <td><strong>${s.organizationName}</strong></td>
-                            <td>${s.contactPerson}</td>
+                            <td>${s.contactPerson || 'N/A'}</td>
                             <td>${s.contactEmail}</td>
-                            <td>
-                                <button class="btn btn-outline btn-sm" onclick="showToast('Management features coming soon')">Manage</button>
-                            </td>
+                            <td><button class="btn btn-outline btn-sm">Details</button></td>
                         </tr>
-                    `).join('');
-                } catch (err) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger">Error loading NGO list</td></tr>';
+                    `).join('') || '<tr><td colspan="4" class="text-center">No NGOs assigned</td></tr>';
                 }
+            } catch (e) { }
+        }
+
+        async function loadVerificationQueue() {
+            const token = localStorage.getItem('straySoulsToken');
+            const container = document.getElementById('verification-container');
+            const badgeSidebar = document.getElementById('verification-sidebar-badge');
+            const badgeHeader = document.getElementById('verification-header-badge');
+
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/pending-verification`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const tasks = await res.json();
+
+                if (badgeSidebar) {
+                    badgeSidebar.textContent = tasks.length;
+                    badgeSidebar.style.display = tasks.length > 0 ? 'inline-block' : 'none';
+                }
+                if (badgeHeader) {
+                    badgeHeader.textContent = `${tasks.length} proofs pending`;
+                    badgeHeader.style.display = tasks.length > 0 ? 'inline-block' : 'none';
+                }
+
+                if (!Array.isArray(tasks) || tasks.length === 0) {
+                    container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 4rem; background: white; border-radius: 12px; border: 2px dashed #eee;">
+                        <i class="fas fa-check-circle fa-3x" style="color:#2ecc71; margin-bottom: 1rem;"></i>
+                        <h4 style="color: #2c3e50;">Verification Queue Empty</h4>
+                        <p style="color: #7f8c8d;">No pending proofs for review.</p>
+                    </div>`;
+                    return;
+                }
+
+                container.innerHTML = tasks.map(t => {
+                    const report = t.reportId || {};
+                    const originalUrl = report.image ? (report.image.startsWith('http') ? report.image : `${API_BASE}/${report.image}`) : 'https://placehold.co/400x300?text=No+Original';
+                    const proofUrl = t.completionProof?.imageUrl ? (t.completionProof.imageUrl.startsWith('http') ? t.completionProof.imageUrl : `${API_BASE}/${t.completionProof.imageUrl}`) : 'https://placehold.co/400x300?text=No+Proof';
+                    const aiData = t.completionProof?.aiAnalysis;
+                    const showAiBadge = aiData && aiData.isAnimal;
+                    const submitter = t.assignedTo?.organizationName || t.assignedTo?.name || 'NGO Partner';
+
+                    return `
+                    <div class="v-card" id="v-card-${t._id}">
+                        <div class="v-card-header">
+                            <div><strong>Mission Review: ${t.title}</strong></div>
+                            <span class="badge ${report.urgency === 'high' ? 'badge-danger' : 'badge-pending'}">${(t.urgency || 'LOW').toUpperCase()}</span>
+                        </div>
+                        <div class="v-card-body">
+                            <div class="v-comparison">
+                                <div class="v-img-box before">
+                                    <p><i class="fas fa-history"></i> BEFORE (Report)</p>
+                                    <img src="${originalUrl}" onclick="openAdminLightbox('${originalUrl}', 'Initial Report Photo')">
+                                </div>
+                                <div class="v-vs-divider"><i class="fas fa-chevron-right"></i></div>
+                                <div class="v-img-box after">
+                                    <p><i class="fas fa-check-circle"></i> AFTER (Rescue Proof)</p>
+                                    ${showAiBadge ? '<span class="ai-badge-floating"><i class="fas fa-robot"></i> AI VERIFIED</span>' : ''}
+                                    <img src="${proofUrl}" onclick="openAdminLightbox('${proofUrl}', 'NGO Completion Proof')">
+                                </div>
+                            </div>
+                            <div class="v-note">"${t.completionProof?.note || 'No notes provided.'}"</div>
+                            <p style="font-size: 0.85rem; color: #2c3e50; margin-bottom: 15px;">
+                                <i class="fas fa-user-shield text-primary"></i> Submitted by: <strong>${submitter}</strong>
+                            </p>
+                            
+                            <div id="v-actions-${t._id}" class="v-footer">
+                                <button class="btn btn-primary" style="flex: 1;" onclick="handleVerificationDecision('${t._id}', 'verify')"><i class="fas fa-check-double"></i> Approve & Resolve</button>
+                                <button class="btn btn-outline" style="flex: 1;" onclick="toggleAdminRejectBox('${t._id}', true)"><i class="fas fa-times-circle"></i> Reject Proof</button>
+                            </div>
+
+                            <div id="v-reject-box-${t._id}" class="reject-reason-box">
+                                <textarea id="v-reason-${t._id}" class="form-control" placeholder="Reason for rejection..."></textarea>
+                                <div style="display:flex; gap:10px; margin-top:10px;">
+                                    <button class="btn btn-danger btn-sm" style="flex:1;" onclick="handleVerificationDecision('${t._id}', 'reject')">Confirm Reject</button>
+                                    <button class="btn btn-outline btn-sm" style="flex:1;" onclick="toggleAdminRejectBox('${t._id}', false)">Cancel</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>`;
+                }).join('');
+            } catch (e) { console.error('Verification queue error:', e); }
+        }
+
+        async function handleVerificationDecision(taskId, action) {
+            const token = localStorage.getItem('straySoulsToken');
+            const reason = document.getElementById(`v-reason-${taskId}`)?.value || '';
+
+            if (action === 'reject' && !reason.trim()) {
+                showToast('Reason required for rejection', 'error');
+                return;
             }
 
-            async function handleCreateNGO(e) {
-                e.preventDefault();
-                const token = localStorage.getItem('straySoulsToken');
-                const submitBtn = document.getElementById('ngo-submit-btn');
-                const originalText = submitBtn.innerText;
+            try {
+                const res = await fetch(`${API_BASE}/api/tasks/${taskId}/verify`, {
+                    method: 'PATCH',
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ action, rejectionReason: reason })
+                });
 
-                const payload = {
-                    organizationName: document.getElementById('ngo-org-name').value,
-                    name: document.getElementById('ngo-name').value,
-                    email: document.getElementById('ngo-email').value,
-                    password: document.getElementById('ngo-password').value
-                };
-
-                submitBtn.disabled = true;
-                submitBtn.innerText = 'Appointing NGO...';
-
-                try {
-                    const res = await fetch(`${API_BASE}/api/auth/create-ngo`, {
-                        method: 'POST',
-                        headers: { 
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json'
-                        },
-                        body: JSON.stringify(payload)
-                    });
-
-                    const data = await res.json();
-                    if (res.ok) {
-                        showToast('NGO Successfully appointed!', 'success');
-                        document.getElementById('create-ngo-form').reset();
-                        loadNGOs();
-                    } else {
-                        showToast(data.error || 'Failed to appoint NGO', 'error');
-                    }
-                } catch (err) {
-                    showToast('Network error', 'error');
-                } finally {
-                    submitBtn.disabled = false;
-                    submitBtn.innerText = originalText;
+                if (res.ok) {
+                    showToast(`Task ${action === 'verify' ? 'Verified' : 'Rejected'}`);
+                    removeCardLocal(taskId);
+                    loadLiveTasks();
+                    loadStats();
                 }
+            } catch (e) { showToast('Execution error', 'error'); }
+        }
+
+        function removeCardLocal(taskId) {
+            const card = document.getElementById(`v-card-${taskId}`);
+            if (card) {
+                card.classList.add('card-removed');
+                setTimeout(() => { card.remove(); loadVerificationQueue(); }, 400);
+            } else { loadVerificationQueue(); }
+        }
+
+        function toggleAdminRejectBox(taskId, show) {
+            document.getElementById(`v-actions-${taskId}`).style.display = show ? 'none' : 'flex';
+            document.getElementById(`v-reject-box-${taskId}`).style.display = show ? 'block' : 'none';
+        }
+
+        function openAdminLightbox(src, cap) {
+            const modal = document.getElementById('lightbox-modal');
+            document.getElementById('lightbox-img').src = src;
+            document.getElementById('lightbox-caption').textContent = cap;
+            modal.style.display = 'flex';
+        }
+
+        function closeLightbox(e) {
+            if (e.target.id === 'lightbox-modal' || e.target.classList.contains('lightbox-close')) {
+                document.getElementById('lightbox-modal').style.display = 'none';
             }
-        </script>
+        }
+
+        function switchAdminSection(sectionId, element) {
+            // Hide all top-level sections
+            document.querySelectorAll('.main-content > .admin-section').forEach(s => s.style.display = 'none');
+
+            // Show the target section
+            const target = document.getElementById(`section-${sectionId}`);
+            if (target) target.style.display = 'block';
+
+            // Update sidebar active state
+            document.querySelectorAll('.sidebar ul li a').forEach(a => a.classList.remove('active'));
+            if (element) element.classList.add('active');
+
+            // Refresh data for the selected section
+            if (sectionId === 'ngos') loadNGOs();
+            if (sectionId === 'verification') loadVerificationQueue();
+            if (sectionId === 'dashboard') { loadLiveTasks(); loadStats(); }
+        }
+
+        async function handleCreateNGO(e) {
+            e.preventDefault();
+            const token = localStorage.getItem('straySoulsToken');
+            const data = {
+                organizationName: document.getElementById('ngo-org-name').value,
+                name: document.getElementById('ngo-name').value,
+                email: document.getElementById('ngo-email').value,
+                password: document.getElementById('ngo-password').value
+            };
+
+            const res = await fetch(`${API_BASE}/api/auth/create-ngo`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (res.ok) {
+                showToast('NGO Appointed!', 'success');
+                document.getElementById('create-ngo-form').reset();
+                loadNGOs();
+            } else {
+                const err = await res.json();
+                showToast(err.error || 'Creation failed', 'error');
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('straySoulsUser');
+            localStorage.removeItem('straySoulsToken');
+            window.location.href = 'index.html';
+        }
+    </script>
 </body>
 
 </html>

@@ -268,13 +268,17 @@
                 tab.classList.remove('active');
             });
             // Show selected tab
-            document.getElementById(`tab-${tabId}`).classList.add('active');
+            const targetTab = document.getElementById(`tab-${tabId}`);
+            if (targetTab) targetTab.classList.add('active');
             
             // Update tab button states
             document.querySelectorAll('.tab-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            event.target.closest('.tab-btn').classList.add('active');
+            
+            // Find and highlight the correct button
+            const clickedBtn = Array.from(document.querySelectorAll('.tab-btn')).find(b => b.getAttribute('onclick').includes(tabId));
+            if (clickedBtn) clickedBtn.classList.add('active');
         }
 
         async function loadOpenTasks() {

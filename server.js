@@ -12,6 +12,7 @@ const volunteerRoutes = require('./router/volunteerRoutes');
 const shelterRoutes = require('./router/shelterRoutes');
 const medicalRoutes = require('./router/medicalRoutes');
 const taskRoutes = require('./router/taskRoutes');
+const rewardRoutes = require('./router/rewardRoutes');
 
 // Initialize Express and HTTP Server
 const app = express();
@@ -45,6 +46,7 @@ app.use('/api/volunteers', volunteerRoutes);
 app.use('/api/shelters', shelterRoutes);
 app.use('/api/medical', medicalRoutes);
 app.use('/api/tasks', taskRoutes);
+app.use('/api/rewards', rewardRoutes);
 
 // Socket.io Connection
 io.on('connection', (socket) => {
@@ -55,9 +57,9 @@ io.on('connection', (socket) => {
         if (role === 'volunteer') {
             socket.join('volunteers_room');
             console.log(`[Socket] ${socket.id} joined volunteers_room`);
-        } else if (role === 'shelter') {
+        } else if (role === 'shelter' || role === 'ngo') {
             socket.join('shelters_room');
-            console.log(`[Socket] ${socket.id} joined shelters_room`);
+            console.log(`[Socket] ${socket.id} joined shelters_room (role: ${role})`);
         } else if (role === 'admin') {
             socket.join('volunteers_room');
             socket.join('shelters_room');

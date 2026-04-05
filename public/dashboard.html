@@ -244,6 +244,7 @@
                 <li><a href="report.html">Report Stray</a></li>
                 <li><a href="adopt.html">Adopt</a></li>
                 <li><a href="donate.html">Donate</a></li>
+                <li><a href="rewards.html" style="color: #d35400; font-weight: bold;"><i class="fas fa-gift"></i> Soul Store</a></li>
                 <li><a href="#" onclick="logout()">Logout</a></li>
             </ul>
         </div>
@@ -888,16 +889,18 @@
                     // Assuming validateProofImage is globally available from taskCompletion.js
                     const isAnimal = await window.validateProofImage(file, preview);
                     if (isAnimal) {
-                        statusTxt.textContent = "✓ Animal detected — proof looks good";
+                        statusTxt.textContent = "✓ Animal detected — proof looks good. You can now submit.";
                         statusTxt.style.color = "green";
                         submitBtn.disabled = false;
                     } else {
-                        statusTxt.textContent = "✗ No animal detected in this image. Please retake the photo with the animal clearly visible.";
+                        statusTxt.textContent = "✗ AI scrutiny failed to detect an animal. Please upload a clearer photo to enable submission.";
                         statusTxt.style.color = "red";
+                        submitBtn.disabled = true; // Block submission
                     }
                 } catch (err) {
-                    statusTxt.textContent = "Error scanning image.";
+                    statusTxt.textContent = "✗ AI verification error. Please re-upload a clear image.";
                     statusTxt.style.color = "red";
+                    submitBtn.disabled = true; // Block on error
                 }
             } else {
                 preview.style.display = 'none';

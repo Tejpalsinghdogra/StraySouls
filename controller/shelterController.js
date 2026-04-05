@@ -70,7 +70,8 @@ exports.updateShelterStatus = async (req, res) => {
 
 exports.getShelterNotifications = async (req, res) => {
     try {
-        if (req.user.role !== 'shelter') {
+        const isOrganization = req.user.role === 'shelter' || req.user.role === 'ngo';
+        if (!isOrganization) {
             return res.status(403).json({ error: 'Access denied: shelters only' });
         }
 

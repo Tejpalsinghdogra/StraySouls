@@ -18,14 +18,14 @@ const path = require('path');
  */
 exports.analyzeAnimalImage = async (imageUrl) => {
 
-    const WORKING_MODEL = 'gemini-2.5-flash';
+    const WORKING_MODEL = 'gemini-2.5-flash-lite';
 
     const fallback = {
         isAnimal:      true,
         isInjured:     false,
         urgencyLevel:  'low',
         animalType:    'other',
-        aiDescription: ''
+        aiDescription: 'AI analysis is currently unavailable (limit reached). Please manually describe the animal and its condition.'
     };
 
     if (!imageUrl) {
@@ -83,13 +83,14 @@ exports.analyzeAnimalImage = async (imageUrl) => {
 Analyze the image and respond with ONLY a valid JSON object — no markdown, no code fences, no extra text.
 
 Required JSON fields:
+- "isAnimal"      : boolean — true if the image clearly contains an animal (dog, cat, bird, etc.), false if it is just a building, landscape, person, or inanimate object.
 - "isInjured"     : boolean — true if the animal shows any wound, bleeding, limping, swelling, skin disease, or visible distress.
 - "urgencyLevel"  : string  — exactly one of: "low", "medium", "high". Use "high" for critical injuries or immediate danger.
 - "animalType"    : string  — exactly one of: "dog", "cat", "bird", "cattle", "other".
 - "aiDescription" : string  — Write a brief 2-3 line description covering: the animal type/breed, its visible condition or any injuries, and the surrounding environment. Keep it concise but informative as it will be stored in the database and shown on reports.
 
 Respond with ONLY the JSON object. Example format:
-{"isInjured": true, "urgencyLevel": "high", "animalType": "dog", "aiDescription": "A medium-sized stray dog with a dirty coat and a visible wound on its hind leg. The animal appears weak and unable to stand, with signs of infection. Found on a busy urban roadside with no shelter nearby."}
+{"isAnimal": true, "isInjured": true, "urgencyLevel": "high", "animalType": "dog", "aiDescription": "A medium-sized stray dog with a dirty coat and a visible wound on its hind leg. The animal appears weak and unable to stand, with signs of infection. Found on a busy urban roadside with no shelter nearby."}
 
 Now analyze the uploaded image:`;
 
@@ -147,7 +148,7 @@ Now analyze the uploaded image:`;
         console.log(`[AI Analyzer] Description preview: "${aiDescription.substring(0, 150)}..."`);
 
         return {
-            isAnimal:     true,
+            isAnimal:     typeof analysis.isAnimal === 'boolean' ? analysis.isAnimal : true,
             isInjured:    typeof analysis.isInjured === 'boolean' ? analysis.isInjured : false,
             urgencyLevel: validUrgency.includes(analysis.urgencyLevel)  ? analysis.urgencyLevel : 'low',
             animalType:   validAnimalType.includes(analysis.animalType) ? analysis.animalType   : 'other',

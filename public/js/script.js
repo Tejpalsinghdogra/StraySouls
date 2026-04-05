@@ -29,25 +29,30 @@ function checkAuth() {
     const authLinks = document.getElementById('auth-links');
     const currentPath = window.location.pathname;
     
-    // Global redirection protection for dashboard pages
     if (user) {
         const isAdminPage = currentPath.includes('admin.html') || 
-                    currentPath.includes('admin-reports.html') ||
-                    currentPath.includes('admin-shelters.html') ||
-                    currentPath.includes('admin-volunteers.html') ||
-                    currentPath.includes('shelter-dashboard.html');
+                            currentPath.includes('admin-reports.html') ||
+                            currentPath.includes('admin-shelters.html') ||
+                            currentPath.includes('admin-volunteers.html');
         
-        if (isAdminPage && user.role === 'volunteer') {
-            window.location.href = 'dashboard.html';
-        } else if (isAdminPage && (user.role === 'shelter' || user.role === 'ngo')) {
+        // Protection for specific role-based dashboards
+        const isTargetNgo = currentPath.endsWith('ngo-dashboard.html');
+        const isTargetShelter = currentPath.endsWith('shelter-dashboard.html');
+        const isTargetVolunteer = currentPath.endsWith('dashboard.html') && !isTargetNgo && !isTargetShelter;
+
+        if (isAdminPage) {
+            if (user.role === 'volunteer') window.location.href = 'dashboard.html';
+            else if (user.role === 'ngo' && !isTargetNgo) window.location.href = 'ngo-dashboard.html';
+            else if (user.role === 'shelter' && !isTargetShelter) window.location.href = 'shelter-dashboard.html';
+        } else if (isTargetVolunteer && (user.role === 'ngo' || user.role === 'shelter')) {
             window.location.href = user.role === 'ngo' ? 'ngo-dashboard.html' : 'shelter-dashboard.html';
-        } else if (currentPath.includes('dashboard.html') && user.role === 'admin') {
-            window.location.href = 'admin.html';
-        } else if (currentPath.includes('dashboard.html') && (user.role === 'shelter' || user.role === 'ngo')) {
-            window.location.href = user.role === 'ngo' ? 'ngo-dashboard.html' : 'shelter-dashboard.html';
+        } else if (isTargetNgo && user.role !== 'ngo') {
+             window.location.href = 'login.html';
+        } else if (isTargetShelter && user.role !== 'shelter') {
+             window.location.href = 'login.html';
         }
-    } else if (currentPath.includes('admin.html') || currentPath.includes('admin-reports.html') || currentPath.includes('dashboard.html') || currentPath.includes('shelter-dashboard.html') || currentPath.includes('ngo-dashboard.html')) {
-        // Not logged in but trying to access a dashboard
+    } else if (currentPath.includes('dashboard.html') || currentPath.includes('admin.html')) {
+        // Not logged in but trying to access any dashboard/admin page
         window.location.href = 'login.html';
     }
 

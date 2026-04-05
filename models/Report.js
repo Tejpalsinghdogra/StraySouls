@@ -44,7 +44,7 @@ const reportSchema = new mongoose.Schema({
     },
     resolvedBy: {
         type: mongoose.Schema.Types.ObjectId,
-        ref: 'Volunteer'
+        ref: 'User'
     },
     createdAt: {
         type: Date,

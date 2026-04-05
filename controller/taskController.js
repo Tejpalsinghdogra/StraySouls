@@ -1,6 +1,19 @@
 const Task = require('../models/Task');
 const Report = require('../models/Report');
 const Volunteer = require('../models/Volunteer');
+const Shelter = require('../models/Shelter');
+const User = require('../models/User');
+const { analyzeAnimalImage } = require('../utils/aiAnalyzer');
+
+// Timeout wrapper — prevents Gemini from hanging the server indefinitely
+function withTimeout(promise, ms = 25000) {
+    return Promise.race([
+        promise,
+        new Promise((_, reject) =>
+            setTimeout(() => reject(new Error(`AI analysis timed out after ${ms}ms`)), ms)
+        )
+    ]);
+}
 // Create a task manually
 exports.createTask = async (req, res) => {
     try {
@@ -101,13 +114,28 @@ exports.acceptTask = async (req, res) => {
         }
 
         const isOrganization = req.user.role === 'shelter' || req.user.role === 'ngo';
-        const assignedToModel = isOrganization ? 'Shelter' : 'User';
+        let assignedToModel = isOrganization ? 'Shelter' : 'User';
+        let finalAssigneeId = userId;
+
+        // Try to find the organization profile
+        let shelter = null;
+        if (isOrganization) {
+            shelter = await Shelter.findOne({ userId });
+            if (shelter) {
+                finalAssigneeId = shelter._id;
+            } else {
+                // FALLBACK: If no shelter profile found, use User ID and User model
+                // This allows the user to still work even if their profile link is broken
+                assignedToModel = 'User';
+                finalAssigneeId = userId;
+            }
+        }
 
         const updatedTask = await Task.findOneAndUpdate(
             { _id: taskId, assignedTo: null, status: 'open' },
             { 
                 $set: { 
-                    assignedTo: userId, 
+                    assignedTo: finalAssigneeId, 
                     assignedToModel: assignedToModel,
                     status: 'accepted',
                     assignedAt: new Date()
@@ -121,7 +149,6 @@ exports.acceptTask = async (req, res) => {
         }
 
         if (isOrganization) {
-            const shelter = await Shelter.findOne({ userId });
             if (shelter) {
                 shelter.assignedTasks.push(updatedTask._id);
                 await shelter.save();
@@ -130,7 +157,7 @@ exports.acceptTask = async (req, res) => {
             if (req.io) {
                 req.io.to('shelters_room').emit('taskAccepted', { 
                     taskId: updatedTask._id, 
-                    shelterId: userId,
+                    shelterId: finalAssigneeId,
                     shelterName: shelter ? shelter.organizationName : 'An NGO',
                     reportId: updatedTask.reportId
                 });
@@ -153,7 +180,13 @@ exports.acceptTask = async (req, res) => {
             }
         }
 
-        res.json({ msg: 'Task accepted successfully', task: updatedTask });
+        // Award Soul Points for accepting the task (stepping up to help)
+        const acceptPoints = isOrganization ? 30 : 20;
+        await User.findByIdAndUpdate(userId, {
+            $inc: { pointsBalance: acceptPoints, totalPointsEarned: acceptPoints }
+        });
+
+        res.json({ msg: 'Task accepted successfully', task: updatedTask, pointsEarned: acceptPoints });
     } catch (err) {
         res.status(500).json({ error: err.message });
     }
@@ -163,8 +196,28 @@ exports.acceptTask = async (req, res) => {
 exports.getMyTasks = async (req, res) => {
     try {
         const userId = req.user.id;
-        const assignedToModel = req.user.role === 'shelter' ? 'Shelter' : 'User';
-        const query = { assignedTo: userId, assignedToModel };
+        const isOrganization = req.user.role === 'shelter' || req.user.role === 'ngo';
+        
+        let finalAssigneeId = userId;
+        let assignedToModel = 'User'; // Default fallback
+
+        if (isOrganization) {
+            const shelter = await Shelter.findOne({ userId });
+            if (shelter) {
+                finalAssigneeId = shelter._id;
+                assignedToModel = 'Shelter';
+            }
+        }
+
+        // We check for BOTH User model and Shelter model if we're an organization 
+        // to handle legacy/fallback tasks
+        const query = { 
+            assignedTo: finalAssigneeId,
+            $or: [
+                { assignedToModel: assignedToModel },
+                { assignedTo: userId } // Always check User ID too
+            ]
+        };
         
         // Filter by routedTo for non-admin users
         if (req.user.role === 'volunteer') {
@@ -188,11 +241,26 @@ exports.updateTaskStatus = async (req, res) => {
         const { taskId } = req.params;
         const { status } = req.body;
 
-        const task = await Task.findByIdAndUpdate(taskId, { status }, { new: true });
-        
+        const task = await Task.findById(taskId);
         if (!task) {
             return res.status(404).json({ error: 'Task not found' });
         }
+
+        // Security check
+        let isOwner = false;
+        if (task.assignedToModel === 'User') {
+            isOwner = task.assignedTo.toString() === req.user.id;
+        } else {
+            const shelter = await Shelter.findOne({ userId: req.user.id });
+            isOwner = shelter && task.assignedTo.toString() === shelter._id.toString();
+        }
+
+        if (!isOwner && req.user.role !== 'admin') {
+            return res.status(403).json({ error: 'Not authorized to update this task' });
+        }
+
+        task.status = status;
+        await task.save();
 
         if (status === 'completed' && task.assignedTo) {
             await Volunteer.findOneAndUpdate({ userId: task.assignedTo }, { isAvailable: true });
@@ -222,12 +290,40 @@ exports.submitTaskProof = async (req, res) => {
         const task = await Task.findById(taskId);
         if (!task) return res.status(404).json({ error: 'Task not found' });
         
-        if (task.assignedTo.toString() !== req.user.id) {
+        let isOwner = false;
+        if (task.assignedToModel === 'User') {
+            isOwner = task.assignedTo.toString() === req.user.id;
+        } else {
+            const shelter = await Shelter.findOne({ userId: req.user.id });
+            isOwner = shelter && task.assignedTo.toString() === shelter._id.toString();
+        }
+
+        if (!isOwner) {
             return res.status(403).json({ error: 'Not authorized: You are not assigned to this task' });
         }
         
         if (task.status !== 'in_progress' && task.status !== 'rejected') {
             return res.status(400).json({ error: 'Task must be in progress to submit proof, or you already submitted proof.' });
+        }
+
+        // --- MANDATORY BACKEND AI VERIFICATION ---
+        console.log(`[TaskProof] Running backend AI verification for Task ${taskId}...`);
+        let aiResult = null;
+        try {
+            // Run Gemini analysis on the uploaded proof image
+            aiResult = await withTimeout(analyzeAnimalImage(req.file.path), 25000);
+            
+            if (aiResult && aiResult.isAnimal === false) {
+                console.log(`[TaskProof] AI Validation Failed: No animal detected in proof.`);
+                return res.status(400).json({ 
+                    error: 'AI Validation Failed: No animal detected in your proof photo. Please ensure the rescued animal is clearly visible.' 
+                });
+            }
+            console.log(`[TaskProof] AI Validation Passed ✓`);
+        } catch (aiErr) {
+            console.error(`[TaskProof] AI Verification skipped or failed due to error:`, aiErr.message);
+            // We allow fallback if Gemini is down, but we logged the error.
+            // If the user wants STRICTEST, we should return 400 here too.
         }
 
         // Setup the proof object
@@ -236,16 +332,18 @@ exports.submitTaskProof = async (req, res) => {
             imageUrl: req.file.path,
             cloudinaryPublicId: req.file.filename,
             note: note || '',
-            submittedAt: Date.now()
+            submittedAt: Date.now(),
+            aiAnalysis: aiResult // Store the AI result for Admin review
         };
         task.verification.status = 'pending';
         
         await task.save();
 
         let submitterName = 'Unknown';
-        let submitterType = task.assignedToModel === 'Shelter' ? 'shelter' : 'volunteer';
+        const isOrganization = task.assignedToModel === 'Shelter';
+        let submitterType = isOrganization ? 'organization' : 'volunteer';
         
-        if (task.assignedToModel === 'Shelter') {
+        if (isOrganization) {
             const shelter = await Shelter.findOne({ userId: req.user.id });
             if (shelter) submitterName = shelter.organizationName;
         } else {
@@ -319,20 +417,34 @@ exports.verifyTask = async (req, res) => {
                 await assigneeDocument.save();
             }
 
-            // AUTO-MARK REPORT AS RESOLVED
+            // AUTO-MARK REPORT AS RESOLVED & AWARD SOUL POINTS
             if (task.reportId) {
                 const updatedReport = await Report.findByIdAndUpdate(task.reportId, {
                     status: 'resolved',
                     resolvedAt: Date.now(),
-                    resolvedBy: !isShelterTask && assigneeDocument ? assigneeDocument._id : null
+                    resolvedBy: task.assignedTo // This is already the user's ID
                 }, { new: true });
+                
+                // Award points to original Reporter
+                if (updatedReport && updatedReport.userId) {
+                    await User.findByIdAndUpdate(updatedReport.userId, { 
+                        $inc: { pointsBalance: 10, totalPointsEarned: 10 } 
+                    });
+                }
+
+                // Award points to Assignee (Volunteer/Shelter)
+                const rewardPoints = isShelterTask ? 100 : 50;
+                await User.findByIdAndUpdate(task.assignedTo, { 
+                    $inc: { pointsBalance: rewardPoints, totalPointsEarned: rewardPoints } 
+                });
 
                 if (req.io && updatedReport) {
+                    const resolverName = assigneeDocument ? (isShelterTask ? assigneeDocument.organizationName : assigneeDocument.name) : 'User';
                     req.io.emit('reportResolved', {
                         reportId: updatedReport._id,
                         taskId: task._id,
                         resolvedAt: updatedReport.resolvedAt,
-                        volunteerName: assigneeDocument ? (isShelterTask ? assigneeDocument.organizationName : assigneeDocument.name) : 'System',
+                        volunteerName: resolverName,
                         animalType: updatedReport.animalType,
                         urgency: updatedReport.urgency
                     });

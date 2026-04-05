@@ -8,7 +8,7 @@ const scopeByRole = (req, res, next) => {
 
     if (req.user.role === 'volunteer') {
         req.routeScope = 'volunteers';
-    } else if (req.user.role === 'shelter') {
+    } else if (req.user.role === 'shelter' || req.user.role.toLowerCase() === 'ngo') {
         req.routeScope = 'shelters';
     } else {
         req.routeScope = null; // admin sees all

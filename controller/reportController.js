@@ -21,7 +21,9 @@ exports.getReports = async (req, res) => {
             }
         }
         
-        const reports = await Report.find(query).sort({ createdAt: -1 });
+        const reports = await Report.find(query)
+            .populate('resolvedBy', 'name email role')
+            .sort({ createdAt: -1 });
         res.json(reports);
     } catch (err) {
         res.status(500).json({ error: err.message });

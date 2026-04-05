@@ -115,18 +115,23 @@
                 </div>
 
                 <div class="form-group">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                    <div
+                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
                         <label style="margin-bottom: 0;">Detected Animal Type</label>
-                        <button type="button" class="btn btn-sm btn-outline" id="change-type-btn" style="padding: 2px 8px; font-size: 0.8rem; display: none;" onclick="toggleTypeSelection()">Not a <span id="btn-type-text">...</span>? Change</button>
+                        <button type="button" class="btn btn-sm btn-outline" id="change-type-btn"
+                            style="padding: 2px 8px; font-size: 0.8rem; display: none;"
+                            onclick="toggleTypeSelection()">Not a <span id="btn-type-text">...</span>? Change</button>
                     </div>
-                    
+
                     <div id="type-display-container">
-                        <div id="animal-type-display" class="form-control" style="background: #f9f9f9; font-weight: 600; display: flex; align-items: center; gap: 10px;">
+                        <div id="animal-type-display" class="form-control"
+                            style="background: #f9f9f9; font-weight: 600; display: flex; align-items: center; gap: 10px;">
                             <span id="type-text">Pending Analysis...</span>
                         </div>
                     </div>
 
-                    <select id="manual-animal-type" class="form-control" style="display: none;" onchange="updateManualType(this.value)">
+                    <select id="manual-animal-type" class="form-control" style="display: none;"
+                        onchange="updateManualType(this.value)">
                         <option value="dog">Dog</option>
                         <option value="cat">Cat</option>
                         <option value="bird">Bird</option>
@@ -215,7 +220,7 @@
             const select = document.getElementById('manual-animal-type');
             const btn = document.getElementById('change-type-btn');
             const animalInput = document.getElementById('animal-type');
-            
+
             if (select.style.display === 'none') {
                 display.style.display = 'none';
                 select.style.display = 'block';
@@ -256,7 +261,7 @@
                 submitBtn.innerText = "Analyzing Animal...";
 
                 const result = await window.verifyAnimalImage(file);
-                
+
                 if (result.isAnimal && result.animalType) {
                     const typeInput = document.getElementById('animal-type');
                     const typeDisplay = document.getElementById('type-text');
@@ -278,7 +283,7 @@
 
                         const formData = new FormData();
                         formData.append('image', file);
-                        
+
                         const analysisRes = await fetch(`${API_BASE}/api/reports/analyze`, {
                             method: 'POST',
                             body: formData
@@ -292,14 +297,14 @@
                                     descArea.value = analysis.aiDescription || "";
                                     descArea.disabled = false;
                                 }
-                                
+
                                 // Also update animal type if different/more specific
                                 if (analysis.animalType && analysis.animalType !== 'other') {
                                     typeInput.value = analysis.animalType;
                                     typeDisplay.innerHTML = `<i class="fas fa-paw"></i> ${analysis.animalType.toUpperCase()}`;
                                     btnTypeText.innerText = analysis.animalType.toUpperCase();
                                 }
-                                
+
                                 showToast("AI Analysis complete! Description generated.", "success");
                             }
                         } else {
